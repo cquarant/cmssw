@@ -1,9 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
 _common_BTLparameters = cms.PSet(
-    bxTime           = cms.double(25),    # [ns]
-    LightOutput      = cms.double(2285.), # [npe/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Efficiency
-    LCEpositionSlope = cms.double(0.038)  # [1/cm] LCE variation vs longitudinal position shift
+    BunchCrossingTime = cms.double(25),    # [ns]
+    LightOutput       = cms.double(2285.), # [npe/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Efficiency
+    LCEpositionSlope  = cms.double(0.035)  # [1/cm] LCE variation vs longitudinal position shift
 )
 
 _barrel_MTDDigitizer = cms.PSet(
@@ -16,20 +16,22 @@ _barrel_MTDDigitizer = cms.PSet(
     premixStage1MaxCharge = cms.double(1e6),
     DeviceSimulation = cms.PSet(
         _common_BTLparameters,
-        LightCollectionSlope      = cms.double(0.095),  # [ns/cm]
-        SigmaLightCollectionSlope = cms.double(0.0045)  # [ns/cm] sigma of the light collection slope
+        LightCollectionSlope      = cms.double(0.0915), # [ns/cm]
+        SigmaLightCollectionSlope = cms.double(0.001)  # [ns/cm] sigma of the light collection slope
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
-        SigmaLCEpositionSlope     = cms.double(0.018),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
-        PulseAmpThreshold         = cms.double(20.32),  # [uA] this correspond to 1 MeV
+        SigmaLCEpositionSlope     = cms.double(0.002),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
+        PulseT2Threshold          = cms.double(8.764),  # [uA] T2 threshold
+        PulseEThrershold          = cms.double(20.32),  # [uA] energy threshold (it corresponds to 1 MeV)
         ChannelRearmMode          = cms.uint32(2),      # 0: the channel rearming is switched off
                                                         # 1: the channel is rearmed after the end-of-event signal
                                                         # 2: the channel is rearmed after ChannelRearmNClocks cycles of the TOFHiR clock
         ChannelRearmNClocks       = cms.double(3.),     # number of TOFHiR clock cycles after which the channel is rearmed
         T1Delay                   = cms.double(0.),     # [ns]
         SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
-        PulseAmpAParam            = cms.vdouble(-1.3, 1.01e-8), # pulse amplitude in uA vs Gain * Npe
+        PulseTbranchAParam        = cms.vdouble(-2.2, 1.89e-8), # average pulse amplitude in uA vs Gain * Npe in the TOFHiR's time branch
+        PulseEbranchAParam        = cms.vdouble(-1.3, 1.01e-8), # average pulse amplitude in uA vs Gain * Npe in the TOFHiR's energy branch
         TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
         TimeAtThr2RiseParam       = cms.vdouble(5.2e6,-0.704), # time at threshold T2 (28 DAC) vs Gain * Npe on the rising edge
         TimeOverThr1Param         = cms.vdouble(1.4776e9,7.93403,-3.78578e-10,5.42505e-18,-2.27325e-27,-7.32799e-10,12.933), # time over the T1 threshold vs Gain * Npe
@@ -46,13 +48,8 @@ _barrel_MTDDigitizer = cms.PSet(
         SigmaClockRU              = cms.double(0.005),  # [ns], uncertainty due to clock distribution within the readout units
         CorrelationCoefficient    = cms.double(1.),     # correlation coefficient between T1 and T2 uncertainties
 
-        PulseAmpParam             = cms.vdouble(-22.5, 0.0348), # pulse amplitude in ADC counts vs Npe
-        PulseAmpResParam          = cms.vdouble(51., -0.88),    # relative amplitude resolution vs Npe
-
-        adcNbits                  = cms.uint32(10),     # number of ADC bits
-        tdcNbits                  = cms.uint32(10),     # number of TDC bits
-        adcThreshold_MIP          = cms.double(327),    # [ADC counts], average MIP energy
-        tdcLSB_ns                 = cms.double(0.020)   # [ns], TDC binning in ns
+        PulseQParam               = cms.vdouble(-22.5, 0.0348), # pulse amplitude in ADC counts vs Npe
+        PulseQResParam            = cms.vdouble(51., -0.88),    # relative amplitude resolution vs Npe
         )
 
 

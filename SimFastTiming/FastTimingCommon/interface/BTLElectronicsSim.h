@@ -42,7 +42,9 @@ public:
 private:
   float rearming_time(const float& time, const float& npe) const;
 
-  float pulse_amp_A(const float& npe) const;
+  float pulse_tbranch_uA(const float& npe) const;
+
+  float pulse_ebranch_uA(const float& npe) const;
 
   float time_at_Thr1Rise(const float& npe) const;
 
@@ -56,12 +58,16 @@ private:
 
   float sigma_electronics(const float& npe) const;
 
-  float pulse_amp(const float& npe) const;
+  float pulse_q(const float& npe) const;
 
-  float pulse_ampRes(const float& npe) const;
+  float pulse_qRes(const float& npe) const;
 
   static constexpr float sqrt2_ = 1.41421356f;
-  static constexpr float tofhirClock_ = 6.25f;
+
+  static constexpr float tofhirClock_ = 6.25f;  // [ns]
+  static constexpr uint32_t adcBitSaturation_ = 1023;
+  static constexpr uint32_t tdcBitSaturation_ = 1023;
+  static constexpr float tdcLSB_ns_ = 0.020;  // [ns]
 
   static constexpr uint32_t numberOfRUs_ = 432;
   std::array<float, numberOfRUs_>* smearingClockRU_;
@@ -69,12 +75,14 @@ private:
   const float bxTime_;
   const float lcepositionSlope_;
   const float sigmaLCEpositionSlope_;
-  const float pulseAmpThreshold_;
+  const float pulseT2Threshold_;
+  const float pulseEThreshold_;
   const uint32_t channelRearmMode_;
   const float channelRearmNClocks_;
   const float t1Delay_;
   const float sipmGain_;
-  const std::vector<double> paramPulseAmpA_;
+  const std::vector<double> paramPulseTbranchA_;
+  const std::vector<double> paramPulseEbranchA_;
   const std::vector<double> paramThr1Rise_;
   const std::vector<double> paramThr2Rise_;
   const std::vector<double> paramTimeOverThr1_;
@@ -89,23 +97,11 @@ private:
   const float sigmaTDC_;
   const float sigmaClockGlobal_;
   const float sigmaClockRU_;
-
-  const std::vector<double> paramPulseAmp_;
-  const std::vector<double> paramPulseAmpRes_;
-
-  // adc/tdc bitwidths
-  const uint32_t adcNbits_, tdcNbits_;
-
-  // synthesized adc/tdc information
-  const uint32_t adcBitSaturation_;
-  const float adcThreshold_MIP_;
-  const float tdcLSB_ns_;
-  const uint32_t tdcBitSaturation_;
-
+  const std::vector<double> paramPulseQ_;
+  const std::vector<double> paramPulseQRes_;
   const float corrCoeff_;
   const float cosPhi_;
   const float sinPhi_;
-
   const float scintillatorDecayTimeInv_;
   const float sigmaConst2_;
 

@@ -17,7 +17,7 @@ BTLDeviceSim::BTLDeviceSim(const edm::ParameterSet& pset, edm::ConsumesCollector
       topoToken_(iC.esConsumes()),
       geom_(nullptr),
       topo_(nullptr),
-      bxTime_(pset.getParameter<double>("bxTime")),
+      bxTime_(pset.getParameter<double>("BunchCrossingTime")),
       lightOutput_(pset.getParameter<double>("LightOutput")),
       lightCollSlope_(pset.getParameter<double>("LightCollectionSlope")),
       sigmaLightCollSlope_(pset.getParameter<double>("SigmaLightCollectionSlope")),

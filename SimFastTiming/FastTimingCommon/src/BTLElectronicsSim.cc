@@ -13,15 +13,17 @@
 using namespace mtd;
 
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
-    : bxTime_(pset.getParameter<double>("bxTime")),
+    : bxTime_(pset.getParameter<double>("BunchCrossingTime")),
       lcepositionSlope_(pset.getParameter<double>("LCEpositionSlope")),
       sigmaLCEpositionSlope_(pset.getParameter<double>("SigmaLCEpositionSlope")),
-      pulseAmpThreshold_(pset.getParameter<double>("PulseAmpThreshold")),
+      pulseT2Threshold_(pset.getParameter<double>("PulseT2Threshold")),
+      pulseEThreshold_(pset.getParameter<double>("PulseEThrershold")),
       channelRearmMode_(pset.getParameter<uint32_t>("ChannelRearmMode")),
       channelRearmNClocks_(pset.getParameter<double>("ChannelRearmNClocks")),
       t1Delay_(pset.getParameter<double>("T1Delay")),
       sipmGain_(pset.getParameter<double>("SiPMGain")),
-      paramPulseAmpA_(pset.getParameter<std::vector<double>>("PulseAmpAParam")),
+      paramPulseTbranchA_(pset.getParameter<std::vector<double>>("PulseTbranchAParam")),
+      paramPulseEbranchA_(pset.getParameter<std::vector<double>>("PulseEbranchAParam")),
       paramThr1Rise_(pset.getParameter<std::vector<double>>("TimeAtThr1RiseParam")),
       paramThr2Rise_(pset.getParameter<std::vector<double>>("TimeAtThr2RiseParam")),
       paramTimeOverThr1_(pset.getParameter<std::vector<double>>("TimeOverThr1Param")),
@@ -36,14 +38,8 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       sigmaTDC_(pset.getParameter<double>("SigmaTDC")),
       sigmaClockGlobal_(pset.getParameter<double>("SigmaClockGlobal")),
       sigmaClockRU_(pset.getParameter<double>("SigmaClockRU")),
-      paramPulseAmp_(pset.getParameter<std::vector<double>>("PulseAmpParam")),
-      paramPulseAmpRes_(pset.getParameter<std::vector<double>>("PulseAmpResParam")),
-      adcNbits_(pset.getParameter<uint32_t>("adcNbits")),
-      tdcNbits_(pset.getParameter<uint32_t>("tdcNbits")),
-      adcBitSaturation_(std::pow(2, adcNbits_) - 1),
-      adcThreshold_MIP_(pset.getParameter<double>("adcThreshold_MIP")),
-      tdcLSB_ns_(pset.getParameter<double>("tdcLSB_ns")),
-      tdcBitSaturation_(std::pow(2, tdcNbits_) - 1),
+      paramPulseQ_(pset.getParameter<std::vector<double>>("PulseQParam")),
+      paramPulseQRes_(pset.getParameter<std::vector<double>>("PulseQResParam")),
       corrCoeff_(pset.getParameter<double>("CorrelationCoefficient")),
       cosPhi_(0.5 * (sqrt(1. + corrCoeff_) + sqrt(1. - corrCoeff_))),
       sinPhi_(0.5 * corrCoeff_ / cosPhi_),
@@ -95,6 +91,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     // --- Apply a common Npe Poisson fluctuation and independet Gaussian smearings
     //     for the LCE position slope to the right and left hits of the bar
     float npe[2] = {0.f, 0.f};
+
     // If both sides of the bar have an hit, the original simhit Npe and x can be determined:
     if ((it->second).hit_info[0][iBX] != 0. && (it->second).hit_info[2][iBX] != 0.) {
       float npe_origin = 0.5 * ((it->second).hit_info[0][iBX] + (it->second).hit_info[2][iBX]);
@@ -135,24 +132,19 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       //  TOFHiR's time branch
       // ================================================================================
 
-      // --- Get the values of T1 and T2 at the two thresholds on the pulse rising
-      //     edge from empirical parametrizations
-      float time_at_T1 = time_at_Thr1Rise(npe[iside]);
-      float time_at_T2 = time_at_Thr2Rise(npe[iside]);
-
-      // --- Skip the hit if either T1 or T2 doesn't reach the threshold
-      //     within the BX time
-      if (time_at_T1 > bxTime_ || time_at_T2 > bxTime_) {
+      // --- Skip the hit if its amplitude is below the T2 threshold
+      if (pulse_tbranch_uA(npe[iside]) < pulseT2Threshold_) {
         continue;
       }
 
-      // --- Skip the hit if its amplitude is below threshold
-      if (pulse_amp_A(npe[iside]) < pulseAmpThreshold_) {
+      // --- Skip the hit if its amplitude is below the energy threshold
+      if (pulse_ebranch_uA(npe[iside]) < pulseEThreshold_) {
         continue;
       }
 
-      float finalToA1 = (it->second).hit_info[1 + 2 * iside][iBX] + time_at_T1;
-      float finalToA2 = (it->second).hit_info[1 + 2 * iside][iBX] + time_at_T2;
+      // --- Add the T1 and T2 threshold crossing times on the pulse rising edge to the SimHit time
+      float finalToA1 = (it->second).hit_info[1 + 2 * iside][iBX] + time_at_Thr1Rise(npe[iside]);
+      float finalToA2 = (it->second).hit_info[1 + 2 * iside][iBX] + time_at_Thr2Rise(npe[iside]);
 
       // --- Loop over the earlier OOT hits in the current bar to determine the channel
       //     rearming time and estimate the photon flux arriving at the in-time BX
@@ -167,12 +159,11 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
         float hit_time_oot = (it->second).hit_info[1 + 2 * iside][ibx];
         float hit_npe_oot = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2 * iside][ibx]);
 
-        // Channel rearming time (the hit is skipped if either T1 or T2 doesn't reach the
-        // threshold within the BX time or an earlier hit is holding the channel)
+        // Calculate the channel rearming time for this hit (the hit is skipped if it
+        // doesn't pass the T2 threshold or an earlier hit is holding the channel)
         float time_at_T1_oot = time_at_Thr1Rise(hit_npe_oot);
-        float time_at_T2_oot = time_at_Thr2Rise(hit_npe_oot);
 
-        if (channelRearmMode_ && time_at_T1_oot < bxTime_ && time_at_T2_oot < bxTime_ &&
+        if (channelRearmMode_ && pulse_tbranch_uA(hit_npe_oot) > pulseT2Threshold_ &&
             hit_time_oot + time_at_T1_oot > channelRearmingTime) {
           channelRearmingTime = rearming_time(hit_time_oot + time_at_T1_oot, hit_npe_oot);
         }
@@ -235,12 +226,12 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       // ================================================================================
 
       // --- Get the pulse amplitude in ADC counts
-      float amp = pulse_amp(npe[iside]);
+      float amp = pulse_q(npe[iside]);
 
       // --- Get the average uncertainty on the pulse amplitude (here the unsmeared
       //     value of Npe is used, because the parameterization of the relative
       //     amplitude resolution already includes the photostatistics fluctuation)
-      float sigma_amp = amp * pulse_ampRes((it->second).hit_info[2 * iside][iBX]);
+      float sigma_amp = amp * pulse_qRes((it->second).hit_info[2 * iside][iBX]);
 
       charge_adc[iside] = CLHEP::RandGaussQ::shoot(hre, amp, sigma_amp);
 
@@ -252,7 +243,6 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     updateOutput(output, rawDataFrame);
 
   }  // MTDSimHitDataAccumulator loop
-
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
@@ -262,11 +252,6 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
                                          const uint8_t row,
                                          const uint8_t col) const {
   bool debug = debug_;
-#ifdef EDM_ML_DEBUG
-  for (int iside = 0; iside < dfSIZE; iside++) {
-    debug |= (charge_adc[iside] > adcThreshold_MIP_);
-  }
-#endif
 
   if (debug) {
     LogTrace("BTLElectronicsSim") << "[runTrivialShaper] DetId " << dataFrame.id().rawId() << std::endl;
@@ -278,12 +263,11 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
     newSample.set(false, false, 0, 0, 0, row, col);
 
     //brute force saturation, maybe could to better with an exponential like saturation
-    const uint32_t adc = std::min((uint32_t)std::floor(charge_adc[iside]), adcBitSaturation_);
-    const uint32_t tdc_time1 = std::min((uint32_t)std::floor(toa1[iside] / tdcLSB_ns_), tdcBitSaturation_);
-    const uint32_t tdc_time2 = std::min((uint32_t)std::floor(toa2[iside] / tdcLSB_ns_), tdcBitSaturation_);
+    const uint32_t adc = std::min((uint32_t)std::round(charge_adc[iside]), adcBitSaturation_);
+    const uint32_t tdc_time1 = std::min((uint32_t)std::round(toa1[iside] / tdcLSB_ns_), tdcBitSaturation_);
+    const uint32_t tdc_time2 = std::min((uint32_t)std::round(toa2[iside] / tdcLSB_ns_), tdcBitSaturation_);
 
-    newSample.set(
-        charge_adc[iside] > adcThreshold_MIP_, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
+    newSample.set(true, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
     dataFrame.setSample(iside, newSample);
 
     if (debug) {
@@ -318,15 +302,20 @@ void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame
 float BTLElectronicsSim::rearming_time(const float& hit_time, const float& hit_npe) const {
   // mode 1: the channel is rearmed after the falling edge of the trigger_B signal
   // mode 2: the channel is rearmed after n cycles of the TOFHiR clock
-  float deadTime = (channelRearmMode_ == 1 ? t1Delay_ + time_over_Thr1(hit_npe) : channelRearmNClocks_ * tofhirClock_);
+  float deadTime = t1Delay_ + (channelRearmMode_ == 1 ? time_over_Thr1(hit_npe) : channelRearmNClocks_ * tofhirClock_);
 
   // Sync the rearming time with the next rising edge of the TOFHiR clock
-  return (std::floor((hit_time + deadTime) / tofhirClock_) + 1.) * tofhirClock_;
+  return (std::round((hit_time + deadTime) / tofhirClock_) + 1.) * tofhirClock_;
 }
 
-float BTLElectronicsSim::pulse_amp_A(const float& npe) const {
+float BTLElectronicsSim::pulse_tbranch_uA(const float& npe) const {
   float gainXnpe = sipmGain_ * npe;
-  return paramPulseAmpA_[0] + paramPulseAmpA_[1] * gainXnpe;
+  return paramPulseTbranchA_[0] + paramPulseTbranchA_[1] * gainXnpe;
+}
+
+float BTLElectronicsSim::pulse_ebranch_uA(const float& npe) const {
+  float gainXnpe = sipmGain_ * npe;
+  return paramPulseEbranchA_[0] + paramPulseEbranchA_[1] * gainXnpe;
 }
 
 float BTLElectronicsSim::time_at_Thr1Rise(const float& npe) const {
@@ -388,8 +377,8 @@ float BTLElectronicsSim::sigma_electronics(const float& npe) const {
   return std::sqrt(res * res);
 }
 
-float BTLElectronicsSim::pulse_amp(const float& npe) const { return paramPulseAmp_[0] + paramPulseAmp_[1] * npe; }
+float BTLElectronicsSim::pulse_q(const float& npe) const { return paramPulseQ_[0] + paramPulseQ_[1] * npe; }
 
-float BTLElectronicsSim::pulse_ampRes(const float& npe) const {
-  return paramPulseAmpRes_[0] * std::pow(npe, paramPulseAmpRes_[1]);
+float BTLElectronicsSim::pulse_qRes(const float& npe) const {
+  return paramPulseQRes_[0] * std::pow(npe, paramPulseQRes_[1]);
 }
