@@ -18,10 +18,7 @@ BTLDeviceSim::BTLDeviceSim(const edm::ParameterSet& pset, edm::ConsumesCollector
       geom_(nullptr),
       topo_(nullptr),
       bxTime_(pset.getParameter<double>("bxTime")),
-      LightYield_(pset.getParameter<double>("LightYield")),
-      LightCollEff_(pset.getParameter<double>("LightCollectionEff")),
-      LightCollSlope_(pset.getParameter<double>("LightCollectionSlope")),
-      PDE_(pset.getParameter<double>("PhotonDetectionEff")),
+      LightOutput_(pset.getParameter<double>("LightOutput")),
       LCEpositionSlope_(pset.getParameter<double>("LCEpositionSlope")) {}
 
 void BTLDeviceSim::getEventSetup(const edm::EventSetup& evs) {
@@ -83,7 +80,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
         simHitAccumulator->emplace(mtd_digitizer::MTDCellId(id, row, col), mtd_digitizer::MTDCellInfo()).first;
 
     // --- Get the simHit energy and convert it from MeV to photo-electrons
-    float Npe = convertGeVToMeV(hit.energyLoss()) * LightYield_ * LightCollEff_ * PDE_;
+    float Npe = convertGeVToMeV(hit.energyLoss()) * LightOutput_;
 
     // --- Calculate the light propagation time to the crystal bases (labeled L and R)
     double distR = 0.5 * topo.pitch().first - convertMmToCm(hit.localPosition().x());

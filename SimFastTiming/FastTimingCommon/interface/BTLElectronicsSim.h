@@ -44,31 +44,37 @@ private:
 
   float sigma_stochastic(const float& npe) const;
 
-  float sigma2_DCR(const float& npe) const;
+  float sigma_DCR(const float& npe) const;
 
-  float sigma2_electronics(const float npe) const;
+  float sigma_electronics(const float npe) const;
+
+  static constexpr float sqrt2_ = 1.41421356f;
 
   const bool debug_;
 
   const float bxTime_;
   const float testBeamMIPTimeRes_;
-  const float ScintillatorRiseTime_;
-  const float ScintillatorDecayTime_;
-  const float ChannelTimeOffset_;
+  const float ccintillatorRiseTime_;
+  const float ccintillatorDecayTime_;
+  const float channelTimeOffset_;
   const float smearChannelTimeOffset_;
 
-  const float EnergyThreshold_;
-  const float TimeThreshold1_;
-  const float TimeThreshold2_;
-  const float ReferencePulseNpe_;
+  const float energyThreshold_;
+  const float timeThreshold1_;
+  const float timeThreshold2_;
+  const float referencePulseNpe_;
 
-  const float SinglePhotonTimeResolution_;
-  const float DarkCountRate_;
-  const float SigmaElectronicNoise_;
-  const float SigmaClock_;
+  //const float sigmaDigitization_;
+  const float sigmaClock_;
+  const std::vector<double> paramDCR_;
+  const float darkCountRate_;
+  const std::vector<double> paramSR_;
+  const float sigmaElectronicNoise_;
+  const float sigmaElectronicNoiseConst_;
+  const float electronicGain_;
   const bool smearTimeForOOTtails_;
-  const float Npe_to_pC_;
-  const float Npe_to_V_;
+  const float npe_to_pC_;
+  const float npe_to_V_;
   const std::vector<double> sigmaRelTOFHIRenergy_;
 
   // adc/tdc bitwidths
@@ -82,16 +88,15 @@ private:
   const float toaLSB_ns_;
   const uint32_t tdcBitSaturation_;
 
-  const float CorrCoeff_;
+  const float corrCoeff_;
   const float cosPhi_;
   const float sinPhi_;
 
-  const float ScintillatorDecayTime2_;
-  const float ScintillatorDecayTimeInv_;
-  const float SPTR2_;
-  const float DCRxRiseTime_;
-  const float SigmaElectronicNoise2_;
-  const float SigmaClock2_;
+  const float ccintillatorDecayTime2_;
+  const float ccintillatorDecayTimeInv_;
+  //const float DCRxRiseTime_;
+  const float sigmaElectronicNoise2_;
+  const float sigmaConst2_;
 
   const BTLPulseShape btlPulseShape_;
 };

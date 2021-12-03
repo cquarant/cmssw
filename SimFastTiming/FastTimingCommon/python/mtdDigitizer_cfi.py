@@ -1,10 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
 _common_BTLparameters = cms.PSet(
-    bxTime                   = cms.double(25),      # [ns]
-    LightYield               = cms.double(40000.),  # [photons/MeV]
-    LightCollectionEff       = cms.double(0.25),
-    PhotonDetectionEff       = cms.double(0.20),
+    bxTime      = cms.double(25),    # [ns]
+    LightOutput = cms.double(2000.), # [photons/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Ef
+
 )
 
 _barrel_MTDDigitizer = cms.PSet(
@@ -22,25 +21,28 @@ _barrel_MTDDigitizer = cms.PSet(
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
-        TestBeamMIPTimeRes         = cms.double(4.293), # This is given by 0.048[ns]*sqrt(8000.), in order to
-                                                        # rescale the time resolution of 1 MIP = 8000 p.e.
-        ScintillatorRiseTime       = cms.double(1.1),   # [ns]
-        ScintillatorDecayTime      = cms.double(40.),   # [ns]
-        ChannelTimeOffset          = cms.double(0.),    # [ns]
-        smearChannelTimeOffset     = cms.double(0.),    # [ns]
-        EnergyThreshold            = cms.double(4.),    # [photo-electrons]
-        TimeThreshold1             = cms.double(20.),   # [photo-electrons]
-        TimeThreshold2             = cms.double(50.),   # [photo-electrons]
-        ReferencePulseNpe          = cms.double(100.),  # [photo-electrons]
-        DarkCountRate              = cms.double(10.),   # [GHz]
-        SinglePhotonTimeResolution = cms.double(0.060), # [ns]
-        SigmaElectronicNoise       = cms.double(1.),    # [p.e.]
-        SigmaClock                 = cms.double(0.015), # [ns]
-        CorrelationCoefficient     = cms.double(1.),
-        SmearTimeForOOTtails       = cms.bool(True),
-        Npe_to_pC                  = cms.double(0.016), # [pC]
-        Npe_to_V                   = cms.double(0.0064),# [V]
-        SigmaRelTOFHIRenergy       = cms.vdouble(0.139,-4.35e-05,3.315e-09,-1.20e-13,1.67e-18), # [%] coefficients of 4th degree Chebyshev polynomial parameterization
+        TestBeamMIPTimeRes        = cms.double(0.2697), # = 0.020[ns]*sqrt(7000.[npe]/38.5[ps])
+        ScintillatorRiseTime      = cms.double(1.1),    # [ns]
+        ScintillatorDecayTime     = cms.double(40.),    # [ns]
+        ChannelTimeOffset         = cms.double(0.),     # [ns]
+        SmearChannelTimeOffset    = cms.double(0.),     # [ns]
+        EnergyThreshold           = cms.double(4.),     # [photo-electrons]
+        TimeThreshold1            = cms.double(20.),    # [photo-electrons]
+        TimeThreshold2            = cms.double(50.),    # [photo-electrons]
+        ReferencePulseNpe         = cms.double(100.),   # [photo-electrons]
+        #SigmaDigitization         = cms.double(0.007), # [ns]
+        SigmaClock                = cms.double(0.015),  # [ns], 0.015 ps uncertainty on the combination of SiPMs
+        DCRParam                  = cms.vdouble(6.234,30.,0.41), # 0.040[ns]*6000[pe]/38.5[ns], 30 [GHz], optimal exponent from fit to labo measurements
+        DarkCountRate             = cms.double(10.),    # [GHz]
+    SlewRateParam                 = cms.vdouble(5.32470e-01,0.,2.92152e+01,7.79368e+00), # parameterization of slew rate vs Gain * npe
+        SigmaElectronicNoise      = cms.double(0.335),  # [ns]
+        SigmaElectronicNoiseConst = cms.double(0.0167), # 0.0167[ns]
+        ElectronicGain            = cms.double(0.0001457), # best gain / gain(3.5 Vov) / 9500. [pe]
+        CorrelationCoefficient    = cms.double(1.),
+        SmearTimeForOOTtails      = cms.bool(True),
+        Npe_to_pC                 = cms.double(0.016),  # [pC]
+        Npe_to_V                  = cms.double(0.0064), # [V]
+        SigmaRelTOFHIRenergy      = cms.vdouble(0.139,-4.35e-05,3.315e-09,-1.20e-13,1.67e-18), # [%] coefficients of 4th degree Chebyshev polynomial parameterization
 
         # n bits for the ADC 
         adcNbits          = cms.uint32(10),
