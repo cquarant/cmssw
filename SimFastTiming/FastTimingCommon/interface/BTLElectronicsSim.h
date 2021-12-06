@@ -92,10 +92,12 @@ private:
   const float cosPhi_;
   const float sinPhi_;
 
-  const float ccintillatorDecayTime2_;
-  const float ccintillatorDecayTimeInv_;
+  const float scintillatorDecayTime2_;
+  const float scintillatorDecayTimeInv_;
+  const float DCRconst2_;
   //const float DCRxRiseTime_;
   const float sigmaElectronicNoise2_;
+  const float SigmaElectronicNoiseConst2_;
   const float sigmaConst2_;
 
   const BTLPulseShape btlPulseShape_;
