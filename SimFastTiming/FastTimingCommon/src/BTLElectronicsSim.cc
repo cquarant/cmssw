@@ -17,7 +17,7 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       scintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
       scintillatorDecayTime_(pset.getParameter<double>("ScintillatorDecayTime")),
       channelTimeOffset_(pset.getParameter<double>("ChannelTimeOffset")),
-      smearChannelTimeOffset_(pset.getParameter<double>("SmearChannelTimeOffset")),
+      smearChannelTimeOffset_(pset.getParameter<double>("smearChannelTimeOffset")),
       energyThreshold_(pset.getParameter<double>("EnergyThreshold")),
       timeThreshold1_(pset.getParameter<double>("TimeThreshold1")),
       timeThreshold2_(pset.getParameter<double>("TimeThreshold2")),
@@ -134,6 +134,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
         // In this case the time resolution is parametrized from the testbeam
 	// (the uncertainty is provided for the combination of two SiPMs).
         // The same parameterization is used for both thresholds.
+
         float sigma = sqrt2_ * sigma_stochastic(npe);
         float smearing_stat_thr1 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
         float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
@@ -143,11 +144,11 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
       } else {
         // In this case the time resolution is taken from the literature.
-        // The fluctuations due to the first TimeThreshold1_ p.e. are common to both times
+        // The fluctuations due to the first timeThreshold1_ p.e. are common to both times
         float smearing_stat_thr1 =
-            CLHEP::RandGaussQ::shoot(hre, 0., ScintillatorDecayTime_ * sqrt(sigma2_pe(TimeThreshold1_, npe)));
+            CLHEP::RandGaussQ::shoot(hre, 0., scintillatorDecayTime_ * sqrt(sigma2_pe(timeThreshold1_, npe)));
         float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(
-            hre, 0., ScintillatorDecayTime_ * sqrt(sigma2_pe(TimeThreshold2_ - TimeThreshold1_, npe)));
+            hre, 0., scintillatorDecayTime_ * sqrt(sigma2_pe(timeThreshold2_ - timeThreshold1_, npe)));
         finalToA1 += smearing_stat_thr1;
         finalToA2 += smearing_stat_thr1 + smearing_stat_thr2;
       }
@@ -266,21 +267,33 @@ float BTLElectronicsSim::sigma2_pe(const float& Q, const float& R) const {
 }
 
 float BTLElectronicsSim::sigma_stochastic(const float& npe) const {
+<<<<<<< HEAD
   return testBeamMIPTimeRes_ * std::sqrt(scintillatorDecayTime_ / npe);
+=======
+ return testBeamMIPTimeRes_ * scintillatorDecayTime_ / npe;
+>>>>>>> 642133dddc7 (clean BTLElectronicsSim, define functions for resolution)
 }
 
 float BTLElectronicsSim::sigma_DCR(const float& npe) const {
 
+<<<<<<< HEAD
   // Trick to safely switch off the electronics contribution for resolution studies:
   if (darkCountRate_ == 0.) {
     return 0.;
   }
 
   return paramDCR_[0] * std::pow((darkCountRate_ / paramDCR_[1]), paramDCR_[2]) * scintillatorDecayTime_ / npe;
+=======
+ // trick to safely switch off the electronics contribution for resolution studies
+
+ if ( darkCountRate_ == 0. ) { return 0.; }
+ return paramDCR_[0] * std::pow((darkCountRate_ / paramDCR_[1]), paramDCR_[2]) * scintillatorDecayTime_ / npe;
+>>>>>>> 642133dddc7 (clean BTLElectronicsSim, define functions for resolution)
 }
 
 float BTLElectronicsSim::sigma_electronics(const float npe) const {
 
+<<<<<<< HEAD
   // Trick to safely switch off the electronics contribution for resolution studies:
   if (electronicGain_ == 0.) {
     return 0.;
@@ -289,11 +302,23 @@ float BTLElectronicsSim::sigma_electronics(const float npe) const {
   float gainXnpe = electronicGain_ * npe;
   float res = sigmaElectronicNoise_ / sqrt2_;
 
+=======
+ // trick to safely switch off the electronics contribution for resolution studies
+
+ if ( electronicGain_ == 0. ) { return 0.; }
+
+ float gainXnpe = electronicGain_ * npe;
+  float res = sigmaElectronicNoise_;
+>>>>>>> 642133dddc7 (clean BTLElectronicsSim, define functions for resolution)
   if (gainXnpe < paramSR_[0]) {
     res /= (paramSR_[2] * gainXnpe + paramSR_[1]);
   } else {
     res /= (paramSR_[3] * std::log(gainXnpe) + paramSR_[2] * paramSR_[0] - paramSR_[3] * std::log(paramSR_[0]));
   }
+<<<<<<< HEAD
 
   return std::sqrt(res * res + sigmaElectronicNoiseConst2_);
+=======
+  return std::sqrt( res * res + sigmaElectronicNoiseConst2_ );
+>>>>>>> 642133dddc7 (clean BTLElectronicsSim, define functions for resolution)
 }

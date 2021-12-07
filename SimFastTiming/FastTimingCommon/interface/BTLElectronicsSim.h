@@ -50,12 +50,17 @@ private:
 
   static constexpr float sqrt2_ = 1.41421356f;
 
+  float sigma_DCR(const float& npe) const;
+
+  float sigma_electronics(const float npe) const;
+
+  static constexpr float sqrt2_ = 1.41421356f;
   const bool debug_;
 
   const float bxTime_;
   const float testBeamMIPTimeRes_;
-  const float ccintillatorRiseTime_;
-  const float ccintillatorDecayTime_;
+  const float scintillatorRiseTime_;
+  const float scintillatorDecayTime_;
   const float channelTimeOffset_;
   const float smearChannelTimeOffset_;
 
@@ -63,7 +68,6 @@ private:
   const float timeThreshold1_;
   const float timeThreshold2_;
   const float referencePulseNpe_;
-
   //const float sigmaDigitization_;
   const float sigmaClock_;
   const std::vector<double> paramDCR_;
@@ -97,7 +101,7 @@ private:
   const float DCRconst2_;
   //const float DCRxRiseTime_;
   const float sigmaElectronicNoise2_;
-  const float SigmaElectronicNoiseConst2_;
+  const float sigmaElectronicNoiseConst2_;
   const float sigmaConst2_;
 
   const BTLPulseShape btlPulseShape_;
