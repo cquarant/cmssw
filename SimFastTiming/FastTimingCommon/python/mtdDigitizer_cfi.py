@@ -3,7 +3,6 @@ import FWCore.ParameterSet.Config as cms
 _common_BTLparameters = cms.PSet(
     bxTime      = cms.double(25),    # [ns]
     LightOutput = cms.double(2000.), # [photons/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Ef
-
 )
 
 _barrel_MTDDigitizer = cms.PSet(
