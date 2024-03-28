@@ -50,11 +50,6 @@ private:
 
   static constexpr float sqrt2_ = 1.41421356f;
 
-  float sigma_DCR(const float& npe) const;
-
-  float sigma_electronics(const float npe) const;
-
-  static constexpr float sqrt2_ = 1.41421356f;
   const bool debug_;
 
   const float bxTime_;
@@ -68,7 +63,7 @@ private:
   const float timeThreshold1_;
   const float timeThreshold2_;
   const float referencePulseNpe_;
-  //const float sigmaDigitization_;
+  const float sigmaDigitization_;
   const float sigmaClock_;
   const std::vector<double> paramDCR_;
   const float darkCountRate_;
@@ -98,9 +93,6 @@ private:
 
   const float scintillatorDecayTime2_;
   const float scintillatorDecayTimeInv_;
-  const float DCRconst2_;
-  //const float DCRxRiseTime_;
-  const float sigmaElectronicNoise2_;
   const float sigmaElectronicNoiseConst2_;
   const float sigmaConst2_;
 
