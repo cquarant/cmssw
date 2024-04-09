@@ -10,6 +10,7 @@
 #include "Geometry/MTDGeometryBuilder/interface/RectangularMTDTopology.h"
 #include "Geometry/MTDCommonData/interface/MTDTopologyMode.h"
 
+#include "CLHEP/Random/RandPoissonQ.h"
 #include "CLHEP/Random/RandGaussQ.h"
 
 BTLDeviceSim::BTLDeviceSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
@@ -80,8 +81,10 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     auto simHitIt =
         simHitAccumulator->emplace(mtd_digitizer::MTDCellId(id, row, col), mtd_digitizer::MTDCellInfo()).first;
 
-    // --- Get the simHit energy and convert it from MeV to photo-electrons
-    float Npe = convertGeVToMeV(hit.energyLoss()) * lightOutput_;
+    // --- Get the simHit energy, convert it from MeV to photo-electrons
+    //     and fluctuate the total number of photo-electrons
+
+    float Npe = CLHEP::RandPoissonQ::shoot(hre, convertGeVToMeV(hit.energyLoss()) * lightOutput_);
 
     // --- Calculate the light propagation time to the crystal bases (labeled L and R)
     double distR = 0.5 * topo.pitch().first - convertMmToCm(hit.localPosition().x());

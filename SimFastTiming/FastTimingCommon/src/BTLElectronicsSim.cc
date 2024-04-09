@@ -50,8 +50,7 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       sigmaElectronicNoiseConst2_(sigmaElectronicNoiseConst_ * sigmaElectronicNoiseConst_),
       sigmaConst2_(sigmaDigitization_ * sigmaDigitization_ + sigmaClock_ * sigmaClock_) {
 #ifdef EDM_ML_DEBUG
-  float lightOutput = 4.2f * pset.getParameter<double>("LightYield") * pset.getParameter<double>("LightCollectionEff") *
-                      pset.getParameter<double>("PhotonDetectionEff");  // average npe for 4.2 MeV
+  float lightOutput = 4.4f * pset.getParameter<double>("LightOutput");  // average npe for 4.4 MeV
   float s1 = sigma_stochastic(lightOutput);
   float s2 = sigma_DCR(lightOutput);
   float s3 = sigma_electronics(lightOutput);
@@ -83,8 +82,10 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     toa1.fill(0.f);
     toa2.fill(0.f);
     for (size_t iside = 0; iside < 2; iside++) {
-      // --- Fluctuate the total number of photo-electrons
-      float npe = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2 * iside][iBX]);
+      // --- Get the number of photo-electrons
+      float npe = (it->second).hit_info[2 * iside][iBX];
+
+      // --- Skip the hits that are below the energy threshold
       if (npe < energyThreshold_)
         continue;
 
