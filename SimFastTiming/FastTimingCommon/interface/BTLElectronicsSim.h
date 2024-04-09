@@ -40,8 +40,6 @@ public:
   static constexpr int dfSIZE = 2;
 
 private:
-  float sigma2_pe(const float& Q, const float& R) const;
-
   float sigma_stochastic(const float& npe) const;
 
   float sigma_DCR(const float& npe) const;

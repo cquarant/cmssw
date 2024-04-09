@@ -142,15 +142,6 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
         finalToA1 += smearing_stat_thr1;
         finalToA2 += smearing_stat_thr2;
 
-      } else {
-        // In this case the time resolution is taken from the literature.
-        // The fluctuations due to the first timeThreshold1_ p.e. are common to both times
-        float smearing_stat_thr1 =
-            CLHEP::RandGaussQ::shoot(hre, 0., scintillatorDecayTime_ * sqrt(sigma2_pe(timeThreshold1_, npe)));
-        float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(
-            hre, 0., scintillatorDecayTime_ * sqrt(sigma2_pe(timeThreshold2_ - timeThreshold1_, npe)));
-        finalToA1 += smearing_stat_thr1;
-        finalToA2 += smearing_stat_thr1 + smearing_stat_thr2;
       }
 
       // --- Add in quadrature the uncertainties due to the SiPM DCR and the electronic noise:
@@ -252,18 +243,6 @@ void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame
   if (putInEvent) {
     coll.push_back(dataFrame);
   }
-}
-
-float BTLElectronicsSim::sigma2_pe(const float& Q, const float& R) const {
-  float OneOverR = 1. / R;
-  float OneOverR2 = OneOverR * OneOverR;
-
-  // --- This is Eq. (17) from Nucl. Instr. Meth. A 564 (2006) 185
-  float sigma2 = Q * OneOverR2 *
-                 (1. + 2. * (Q + 1.) * OneOverR + (Q + 1.) * (6. * Q + 11) * OneOverR2 +
-                  (Q + 1.) * (Q + 2.) * (2. * Q + 5.) * OneOverR2 * OneOverR);
-
-  return sigma2;
 }
 
 float BTLElectronicsSim::sigma_stochastic(const float& npe) const {
