@@ -62,12 +62,12 @@ private:
   const float timeThreshold2_;
   const float referencePulseNpe_;
   const float sigmaDigitization_;
-  const float sigmaClock_;
+  const float sigmaClockGlobal_;
+  const float sigmaClockRU_;
   const std::vector<double> paramDCR_;
   const float darkCountRate_;
   const std::vector<double> paramSR_;
   const float sigmaElectronicNoise_;
-  const float sigmaElectronicNoiseConst_;
   const float electronicGain_;
   const bool smearTimeForOOTtails_;
   const float npe_to_pC_;
@@ -91,7 +91,6 @@ private:
 
   const float scintillatorDecayTime2_;
   const float scintillatorDecayTimeInv_;
-  const float sigmaElectronicNoiseConst2_;
   const float sigmaConst2_;
 
   const BTLPulseShape btlPulseShape_;

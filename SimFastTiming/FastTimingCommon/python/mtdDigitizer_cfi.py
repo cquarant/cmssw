@@ -2,7 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 _common_BTLparameters = cms.PSet(
     bxTime      = cms.double(25),    # [ns]
-    LightOutput = cms.double(2000.), # [photons/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Ef
+    LightOutput = cms.double(1265.), # [photons/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Ef
 )
 
 _barrel_MTDDigitizer = cms.PSet(
@@ -29,13 +29,13 @@ _barrel_MTDDigitizer = cms.PSet(
         TimeThreshold1            = cms.double(20.),    # [photo-electrons]
         TimeThreshold2            = cms.double(50.),    # [photo-electrons]
         ReferencePulseNpe         = cms.double(100.),   # [photo-electrons]
-        SigmaDigitization         = cms.double(0.007),  # [ns]
-        SigmaClock                = cms.double(0.015),  # [ns], 0.015 ps uncertainty on the combination of SiPMs
+        SigmaDigitization         = cms.double(0.0133), # [ns]
+        SigmaClockGlobal          = cms.double(0.007),  # [ns], uncertainty due to the global LHC clock distribution
+        SigmaClockRU              = cms.double(0.005),  # [ns], uncertainty due to clock distribution within the readout units
         DCRParam                  = cms.vdouble(6.234,30.,0.41), # 0.040[ns]*6000[pe]/38.5[ns], 30 [GHz], optimal exponent from fit to labo measurements
         DarkCountRate             = cms.double(10.),    # [GHz]
         SlewRateParam             = cms.vdouble(5.32470e-01,0.,2.92152e+01,7.79368e+00), # parameterization of slew rate vs Gain * npe
         SigmaElectronicNoise      = cms.double(0.335),  # [ns]
-        SigmaElectronicNoiseConst = cms.double(0.0167), # 0.0167[ns]
         ElectronicGain            = cms.double(0.0001457), # best gain / gain(3.5 Vov) / 9500. [pe]
         CorrelationCoefficient    = cms.double(1.),
         SmearTimeForOOTtails      = cms.bool(True),

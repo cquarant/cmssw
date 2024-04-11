@@ -3,6 +3,8 @@
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
 
+#include "DataFormats/ForwardDetId/interface/BTLDetId.h"
+
 #include "CLHEP/Random/RandPoissonQ.h"
 #include "CLHEP/Random/RandGaussQ.h"
 
@@ -23,12 +25,12 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       timeThreshold2_(pset.getParameter<double>("TimeThreshold2")),
       referencePulseNpe_(pset.getParameter<double>("ReferencePulseNpe")),
       sigmaDigitization_(pset.getParameter<double>("SigmaDigitization")),
-      sigmaClock_(pset.getParameter<double>("SigmaClock")),
+      sigmaClockGlobal_(pset.getParameter<double>("SigmaClockGlobal")),
+      sigmaClockRU_(pset.getParameter<double>("SigmaClockRU")),
       paramDCR_(pset.getParameter<std::vector<double>>("DCRParam")),
       darkCountRate_(pset.getParameter<double>("DarkCountRate")),
       paramSR_(pset.getParameter<std::vector<double>>("SlewRateParam")),
       sigmaElectronicNoise_(pset.getParameter<double>("SigmaElectronicNoise")),
-      sigmaElectronicNoiseConst_(pset.getParameter<double>("SigmaElectronicNoiseConst")),
       electronicGain_(pset.getParameter<double>("ElectronicGain")),
       smearTimeForOOTtails_(pset.getParameter<bool>("SmearTimeForOOTtails")),
       npe_to_pC_(pset.getParameter<double>("Npe_to_pC")),
@@ -47,8 +49,7 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       sinPhi_(0.5 * corrCoeff_ / cosPhi_),
       scintillatorDecayTime2_(scintillatorDecayTime_ * scintillatorDecayTime_),
       scintillatorDecayTimeInv_(1. / scintillatorDecayTime_),
-      sigmaElectronicNoiseConst2_(sigmaElectronicNoiseConst_ * sigmaElectronicNoiseConst_),
-      sigmaConst2_(sigmaDigitization_ * sigmaDigitization_ + sigmaClock_ * sigmaClock_) {
+      sigmaConst2_(sigmaDigitization_ * sigmaDigitization_ + sigmaClockGlobal_ * sigmaClockGlobal_) {
 #ifdef EDM_ML_DEBUG
   float lightOutput = 4.4f * pset.getParameter<double>("LightOutput");  // average npe for 4.4 MeV
   float s1 = sigma_stochastic(lightOutput);
@@ -62,7 +63,8 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
                                 << "\n sigma DCR          = " << std::setw(14) << sigma_DCR(lightOutput)
                                 << "\n sigma electronics  = " << std::setw(14) << sigma_electronics(lightOutput)
                                 << "\n sigma digitization = " << std::setw(14) << sigmaDigitization_
-                                << "\n sigma clock        = " << std::setw(14) << sigmaClock_
+                                << "\n sigma clock        = " << std::setw(14)
+                                << sqrt(sigmaClockGlobal_ * sigmaClockGlobal_ + sigmaClockRU_ * sigmaClockRU_)
                                 << "\n ---------------------"
                                 << "\n sigma total        = " << std::setw(14)
                                 << std::sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4 + s5 * s5);
@@ -72,10 +74,14 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
 void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
                             BTLDigiCollection& output,
                             CLHEP::HepRandomEngine* hre) const {
-  MTDSimHitData chargeColl, toa1, toa2;
+  // --- Generate a different clock jitter for each readout unit
+  std::vector<float> v_smearingClockRU;
+  for (unsigned int iRU = 0; iRU < 2 * BTLDetId::HALF_ROD * BTLDetId::kCrystalTypes * BTLDetId::kRUPerTypeV2; ++iRU)
+    v_smearingClockRU.push_back(CLHEP::RandGaussQ::shoot(hre, 0., sigmaClockRU_));
 
+  MTDSimHitData chargeColl, toa1, toa2;
   for (MTDSimHitDataAccumulator::const_iterator it = input.begin(); it != input.end(); it++) {
-    // --- Digitize only the in-time bucket:
+    // --- Digitize only the in-time bucket
     const unsigned int iBX = mtd_digitizer::kInTimeBX;
 
     chargeColl.fill(0.f);
@@ -129,35 +135,37 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
         }
       }  // if smearTimeForOOTtails_
 
-      // --- Stochastich term, uncertainty due to the fluctuations of the n-th photon arrival time:
+      // --- Stochastich term, uncertainty due to the fluctuations of the n-th photon arrival time
       if (testBeamMIPTimeRes_ > 0.) {
-        // In this case the time resolution is parametrized from the testbeam
-        // (NB: the uncertainty is provided for the combination of two SiPMs).
+        // The time resolution is parametrized from the testbeam results.
         // The same parameterization is used for both thresholds.
 
-        float sigma = sqrt2_ * sigma_stochastic(npe);
+        float sigma = sqrt2_ * sigma_stochastic(npe);  // the uncertainty is provided for the combination of two SiPMs
         float smearing_stat_thr1 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
         float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
 
         finalToA1 += smearing_stat_thr1;
         finalToA2 += smearing_stat_thr2;
-
       }
 
-      // --- Add in quadrature the uncertainties due to the SiPM DCR and the electronic noise:
+      // --- Add in quadrature the uncertainties due to the SiPM DCR and the electronic noise
       float sigmaDCR = sigma_DCR(npe);
       float sigmaElec = sigma_electronics(npe);
       float sigma2_tot_thr1 = sigmaDCR * sigmaDCR + sigmaElec * sigmaElec;
 
-      // --- Add in quadrature the uncertainties independent of npe: digitization and clock distribution
+      // --- Add in quadrature the uncertainties independent of npe: digitization and global clock distribution
       sigma2_tot_thr1 += sigmaConst2_;
-      sigma2_tot_thr1 *= 2.f;  // all uncertainties are provided for a combination of two SiPMs
-
       float sigma2_tot_thr2 = sigma2_tot_thr1;
 
-      // --- Smear the arrival times using the correlated uncertainties:
-      float smearing_thr1_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr1));
-      float smearing_thr2_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr2));
+      // --- Add the contribution due to the clock distribution within the readout units
+      //     and smear the arrival times using the correlated uncertainties
+
+      // Define a global readout-unit ID
+      BTLDetId cellId((it->first).detid_);
+      int iRU = 12 * (cellId.mtdRR() - 1) + 6 * cellId.mtdSide() + cellId.globalRunit() - 1;
+
+      float smearing_thr1_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr1)) + v_smearingClockRU[iRU];
+      float smearing_thr2_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr2)) + v_smearingClockRU[iRU];
 
       finalToA1 += cosPhi_ * smearing_thr1_uncorr + sinPhi_ * smearing_thr2_uncorr;
       finalToA2 += sinPhi_ * smearing_thr1_uncorr + cosPhi_ * smearing_thr2_uncorr;
@@ -273,5 +281,5 @@ float BTLElectronicsSim::sigma_electronics(const float npe) const {
     res /= (paramSR_[3] * std::log(gainXnpe) + paramSR_[2] * paramSR_[0] - paramSR_[3] * std::log(paramSR_[0]));
   }
 
-  return std::sqrt(res * res + sigmaElectronicNoiseConst2_);
+  return std::sqrt(res * res);
 }
