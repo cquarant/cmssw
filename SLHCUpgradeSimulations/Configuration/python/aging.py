@@ -245,6 +245,46 @@ def ecal_complete_aging(process):
         process.ecal_digi_parameters.UseLCcorrection = cms.untracked.bool(False)
     return process
 
+def ageMTD(process,lumi):
+
+    mtd_lumis = [1000, 3000]
+    mtd_parameters = {
+        1000: {
+            "light_output": 1265.,
+            "dark_count_rate": 10.,
+            "electronic_gain": 0.0001457,
+        },
+        3000: {
+            "light_output": 1265.,
+            "dark_count_rate": 10.,
+            "electronic_gain": 0.0001457,
+        },
+    }
+
+    if int(lumi) in mtd_lumis:
+        if hasattr(process,'mtdDigitizer'):
+            process.mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
+            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+        if hasattr(process,'theDigitizers') and hasattr(process.theDigitizers,'fastTimingLayer'):
+            process.theDigitizers.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
+            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+        if hasattr(process,'theDigitizersValid') and hasattr(process.theDigitizersValid,'fastTimingLayer'):
+            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
+            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+        if hasattr(process,'mix') and hasattr(process.mix,'digitizers') and hasattr(process.mix.digitizers,'fastTimingLayer'):
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+
+    return process
+
 def customise_aging_300(process):
     process=ageHcal(process,300,5.0e34,"nominal")
     process=ageEcal(process,300,5.0e34)
@@ -254,12 +294,14 @@ def customise_aging_1000(process):
     process=ageHcal(process,1000,5.0e34,"nominal")
     process=turn_off_HE_aging(process) #avoid conflict between HGCal and Hcal in phase2 geom configuration
     process=ageEcal(process,1000,5.0e34)
+    process=ageMTD(process,1000)
     return process
 
 def customise_aging_3000(process):
     process=ageHcal(process,3000,5.0e34,"nominal")
     process=turn_off_HE_aging(process) #avoid conflict between HGCal and Hcal in phase2 geom configuration
     process=ageEcal(process,3000,5.0e34)
+    process=ageMTD(process,3000)
     process=agedHGCal(process)
     process=agedHFNose(process)
     return process
@@ -268,6 +310,7 @@ def customise_aging_3000_ultimate(process):
     process=ageHcal(process,3000,7.5e34,"ultimate")
     process=turn_off_HE_aging(process) #avoid conflict between HGCal and Hcal in phase2 geom configuration
     process=ageEcal(process,3000,7.5e34)
+    process=ageMTD(process,3000)
     process=agedHGCal(process)
     process=agedHFNose(process)
     return process
