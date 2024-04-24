@@ -262,26 +262,17 @@ def ageMTD(process,lumi):
     }
 
     if int(lumi) in mtd_lumis:
-        if hasattr(process,'mtdDigitizer'):
-            process.mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
-            process.mtdDigitizer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
-        if hasattr(process,'theDigitizers') and hasattr(process.theDigitizers,'fastTimingLayer'):
-            process.theDigitizers.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
-            process.theDigitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
-        if hasattr(process,'theDigitizersValid') and hasattr(process.theDigitizersValid,'fastTimingLayer'):
-            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
-            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
-            process.theDigitizersValid.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
         if hasattr(process,'mix') and hasattr(process.mix,'digitizers') and hasattr(process.mix.digitizers,'fastTimingLayer'):
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+        # --- This is for the workflows with premixing:
+        if hasattr(process,'mixData') and hasattr(process.mixData,'workers') and hasattr(process.mixData.workers,'mtdBarrel'):
+            process.mixData.workers.mtdBarrel.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
 
     return process
 
