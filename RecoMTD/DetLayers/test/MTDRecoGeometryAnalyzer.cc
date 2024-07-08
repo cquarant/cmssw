@@ -123,14 +123,15 @@ void MTDRecoGeometryAnalyzer::testBTLLayers(const MTDDetLayerGeometry* geo, cons
     unsigned int irodInd(0);
     for (const auto& irod : layer->rods()) {
       irodInd++;
-      LogVerbatim("MTDLayerDump") << std::fixed << "\nRod " << irodInd << " dets = " << irod->basicComponents().size()
+      LogVerbatim("MTDLayerDump") << std::fixed << "\nSingle-module rod (starting from phi=-pi)" << irodInd << " dets = " << irod->basicComponents().size()
                                   << "\n";
       for (const auto& imod : irod->basicComponents()) {
         BTLDetId modId(imod->geographicalId().rawId());
         LogVerbatim("MTDLayerDump") << std::fixed << "BTLDetId " << modId.rawId() << " side = " << std::setw(4)
                                     << modId.mtdSide() << " rod = " << modId.mtdRR()
-                                    << " type/RU/mod = " << std::setw(1) << modId.modType() << "/" << std::setw(1)
-                                    << modId.runit() << "/" << std::setw(2) << modId.module() << std::setw(14)
+                                    // << " type/RU/mod = " << std::setw(1) << modId.modType() << "/" << std::setw(1)
+                                    << " RU/DM/SM = " << std::setw(1) << modId.runit() << "/" << std::setw(2)
+                                    << modId.dmodule() << "/" << std::setw(1) << modId.smodule() << std::setw(14)
                                     << " R = " << std::setprecision(4) << imod->position().perp() << std::setw(14)
                                     << " phi = " << imod->position().phi() << std::setw(14)
                                     << " Z = " << imod->position().z();
