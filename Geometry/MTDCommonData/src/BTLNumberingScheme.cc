@@ -110,7 +110,7 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
       zside = (pos <= rodName.size() ? 1 : 0);
 
       // rod (tray) copy number
-      rodCopy = baseNumber.getCopyNumber(3);
+      rodCopy = baseNumber.getCopyNumber(3) - 1;
       
       // RU, global module and crystal copy numbers
       // (make everything start from 0)
@@ -168,9 +168,9 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
         return 0;
       }
 
-      if (1 > rodCopy || BTLDetId::HALF_ROD < rodCopy) {
+      if (0 > int(rodCopy) || BTLDetId::HALF_ROD < rodCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
-                                   << "****************** Bad rod copy = " << rodCopy
+                                   << "****************** Bad rod copy = " << int(rodCopy)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(3);
         return 0;
       }
@@ -205,7 +205,7 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
     zside = (pos <= rodName.size() ? 1 : 0);
 
     // rod (tray) copy number
-    rodCopy = baseNumber.getCopyNumber(2);
+    rodCopy = baseNumber.getCopyNumber(2) - 1;
 
     // RU, and global module copy numbers
     // (make everything start from 0)
@@ -253,9 +253,9 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
       return 0;
     }
 
-    if (1 > rodCopy || BTLDetId::HALF_ROD < rodCopy) {
+    if (0 > int(rodCopy) || BTLDetId::HALF_ROD < rodCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
-                                 << "****************** Bad rod copy = " << rodCopy
+                                 << "****************** Bad rod copy = " << int(rodCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(2);
       return 0;
     }
