@@ -250,14 +250,24 @@ def ageMTD(process,lumi):
     mtd_lumis = [1000, 3000]
     mtd_parameters = {
         1000: {
-            "light_output": 1265.,
-            "dark_count_rate": 10.,
-            "electronic_gain": 0.0001457,
+            "light_output": 1444.,
+            "dark_count_rate": 12.,
+            "energy_threshold": 1444.,
+            "sipm_gain": 417840.,
+            "time_at_thr1rise": [3.1e5, -0.580],
+            "time_at_thr2rise": [1.11e6, -0.631],
+            "slew_rate": [1.3e9, -0.8, 8.7e-9, 11.1],
+            "pulse_amp": [-43.5, 0.0793]
         },
         3000: {
-            "light_output": 1265.,
-            "dark_count_rate": 10.,
-            "electronic_gain": 0.0001457,
+            "light_output": 1004.,
+            "dark_count_rate": 20.,
+            "energy_threshold": 1004.,
+            "sipm_gain": 330990.,
+            "time_at_thr1rise": [3.1e5, -0.580],
+            "time_at_thr2rise": [1.11e6, -0.631],
+            "slew_rate": [1.3e9, -0.8, 8.7e-9, 11.1],
+            "pulse_amp": [-34.3, 0.085]
         },
     }
 
@@ -265,14 +275,24 @@ def ageMTD(process,lumi):
         if hasattr(process,'mix') and hasattr(process.mix,'digitizers') and hasattr(process.mix.digitizers,'fastTimingLayer'):
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.EnergyThreshold = cms.double(mtd_parameters[lumi]["energy_threshold"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
-            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.SiPMgain = cms.double(mtd_parameters[lumi]["sipm_gain"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr1rise"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr2rise"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.SlewRateParam = cms.vdouble(mtd_parameters[lumi]["slew_rate"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.PulseAmpParam = cms.vdouble(mtd_parameters[lumi]["pulse_amp"])
         # --- This is for the workflows with premixing:
         if hasattr(process,'mixData') and hasattr(process.mixData,'workers') and hasattr(process.mixData.workers,'mtdBarrel'):
             process.mixData.workers.mtdBarrel.DeviceSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.LightOutput = cms.double(mtd_parameters[lumi]["light_output"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.EnergyThreshold = cms.double(mtd_parameters[lumi]["energy_threshold"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
-            process.mixData.workers.mtdBarrel.ElectronicsSimulation.ElectronicGain = cms.double(mtd_parameters[lumi]["electronic_gain"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.SiPMgain = cms.double(mtd_parameters[lumi]["sipm_gain"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr1rise"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr2rise"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.SlewRateParam = cms.vdouble(mtd_parameters[lumi]["slew_rate"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.PulseAmpParam = cms.vdouble(mtd_parameters[lumi]["pulse_amp"])
 
     return process
 
