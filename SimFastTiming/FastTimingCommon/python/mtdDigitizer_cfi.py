@@ -20,39 +20,32 @@ _barrel_MTDDigitizer = cms.PSet(
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
-        TestBeamMIPTimeRes        = cms.double(0.2697), # = 0.020[ns]*sqrt(7000.[npe]/38.5[ps])
-        ScintillatorRiseTime      = cms.double(1.1),    # [ns]
-        ScintillatorDecayTime     = cms.double(40.),    # [ns]
+        EnergyThreshold           = cms.double(2285.),  # [photo-electrons]
         ChannelTimeOffset         = cms.double(0.),     # [ns]
         SmearChannelTimeOffset    = cms.double(0.),     # [ns]
-        EnergyThreshold           = cms.double(4.),     # [photo-electrons]
-        TimeThreshold1            = cms.double(20.),    # [photo-electrons]
-        TimeThreshold2            = cms.double(50.),    # [photo-electrons]
-        ReferencePulseNpe         = cms.double(100.),   # [photo-electrons]
-        SigmaDigitization         = cms.double(0.0133), # [ns]
+        SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
+        TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
+        TimeAtThr2RiseParam       = cms.vdouble(5.2e6,-0.704), # time at threshold T2 (28 DAC) vs Gain * Npe on the rising edge
+        SmearTimeForOOTtails      = cms.bool(True),     # switch to turn ON/OFF the uncertainty due to photons from OOT hits
+        ScintillatorRiseTime      = cms.double(1.1),    # [ns]
+        ScintillatorDecayTime     = cms.double(40.),    # [ns]
+        StocasticParam            = cms.vdouble(14.746531, 0.7), # (0.030[ns]*7000^0.7, 0.7)
+        DarkCountRate             = cms.double(0.),     # [GHz]
+        DCRParam                  = cms.vdouble(18.864500, 0.7), # (0.034[ns]*6000/30^0.7, 0.7)
+        SigmaElectronicNoise      = cms.double(0.420),  # [uA]
+        SlewRateParam             = cms.vdouble(1.3e9,-3.5,10.9e-9,14.7), # parameterization of slew rate vs Gain * npe
+        SigmaTDC                  = cms.double(0.0133), # [ns]
         SigmaClockGlobal          = cms.double(0.007),  # [ns], uncertainty due to the global LHC clock distribution
         SigmaClockRU              = cms.double(0.005),  # [ns], uncertainty due to clock distribution within the readout units
-        DCRParam                  = cms.vdouble(6.234,30.,0.41), # 0.040[ns]*6000[pe]/38.5[ns], 30 [GHz], optimal exponent from fit to labo measurements
-        DarkCountRate             = cms.double(10.),    # [GHz]
-        SlewRateParam             = cms.vdouble(5.32470e-01,0.,2.92152e+01,7.79368e+00), # parameterization of slew rate vs Gain * npe
-        SigmaElectronicNoise      = cms.double(0.335),  # [ns]
-        ElectronicGain            = cms.double(0.0001457), # best gain / gain(3.5 Vov) / 9500. [pe]
-        CorrelationCoefficient    = cms.double(1.),
-        SmearTimeForOOTtails      = cms.bool(True),
-        Npe_to_pC                 = cms.double(0.016),  # [pC]
-        Npe_to_V                  = cms.double(0.0064), # [V]
-        SigmaRelTOFHIRenergy      = cms.vdouble(0.139,-4.35e-05,3.315e-09,-1.20e-13,1.67e-18), # [%] coefficients of 4th degree Chebyshev polynomial parameterization
+        CorrelationCoefficient    = cms.double(1.),     # correlation coefficient between T1 and T2 uncertainties
 
-        # n bits for the ADC 
-        adcNbits          = cms.uint32(10),
-        # n bits for the TDC
-        tdcNbits          = cms.uint32(10),
-        # ADC saturation
-        adcSaturation_MIP = cms.double(600.),           # [pC]
-        # for different thickness
-        adcThreshold_MIP   = cms.double(0.064),         # [pC]
-        # LSB for time of arrival estimate from TDC
-        toaLSB_ns         = cms.double(0.020),          # [ns]
+        PulseAmpParam             = cms.vdouble(-22.5, 0.0348), # pulse amplitude in ADC counts vs Npe
+        PulseAmpResParam          = cms.vdouble(51., -0.88),    # relative amplitude resolution vs Npe
+
+        adcNbits                  = cms.uint32(10),     # number of ADC bits
+        tdcNbits                  = cms.uint32(10),     # number of TDC bits
+        adcThreshold_MIP          = cms.double(327),    # [ADC counts], average MIP energy
+        toaLSB_ns                 = cms.double(0.020),  # [ns], TDC time binning
         )
 
 
@@ -68,6 +61,7 @@ _endcap_MTDDigitizer = cms.PSet(
     premixStage1MaxCharge = cms.double(1e6),
     DeviceSimulation  = cms.PSet(
         bxTime               = cms.double(25),
+
         IntegratedLuminosity = cms.double(1000.0),
         FluenceVsRadius      = cms.string("1.937*TMath::Power(x,-1.706)"),
         LGADGainVsFluence    = cms.string("TMath::Min(15.,30.-x)"),

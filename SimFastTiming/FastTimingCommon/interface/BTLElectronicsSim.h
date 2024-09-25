@@ -10,8 +10,6 @@
 #include "DataFormats/FTLDigi/interface/FTLDigiCollections.h"
 #include "SimFastTiming/FastTimingCommon/interface/MTDDigitizerTypes.h"
 
-#include "SimFastTiming/FastTimingCommon/interface/BTLPulseShape.h"
-
 namespace mtd = mtd_digitizer;
 
 namespace CLHEP {
@@ -40,47 +38,53 @@ public:
   static constexpr int dfSIZE = 2;
 
 private:
+  float time_at_Thr1Rise(const float& npe) const;
+
+  float time_at_Thr2Rise(const float& npe) const;
+
   float sigma_stochastic(const float& npe) const;
 
   float sigma_DCR(const float& npe) const;
 
-  float sigma_electronics(const float npe) const;
+  float sigma_electronics(const float& npe) const;
+
+  float pulse_amp(const float& npe) const;
+
+  float pulse_ampRes(const float& npe) const;
 
   static constexpr float sqrt2_ = 1.41421356f;
 
   const bool debug_;
 
   const float bxTime_;
-  const float testBeamMIPTimeRes_;
-  const float scintillatorRiseTime_;
-  const float scintillatorDecayTime_;
+  const float energyThreshold_;
   const float channelTimeOffset_;
   const float smearChannelTimeOffset_;
-
-  const float energyThreshold_;
-  const float timeThreshold1_;
-  const float timeThreshold2_;
-  const float referencePulseNpe_;
-  const float sigmaDigitization_;
+  const float sipmGain_;
+  const std::vector<double> paramThr1Rise_;
+  const std::vector<double> paramThr2Rise_;
+  const bool smearTimeForOOTtails_;
+  const float scintillatorRiseTime_;
+  const float scintillatorDecayTime_;
+  const std::vector<double> stocasticParam_;
+  const float darkCountRate_;
+  const std::vector<double> paramDCR_;
+  const float sigmaElectronicNoise_;
+  const std::vector<double> paramSR_;
+  const float sigmaTDC_;
   const float sigmaClockGlobal_;
   const float sigmaClockRU_;
-  const std::vector<double> paramDCR_;
-  const float darkCountRate_;
-  const std::vector<double> paramSR_;
-  const float sigmaElectronicNoise_;
-  const float electronicGain_;
-  const bool smearTimeForOOTtails_;
-  const float npe_to_pC_;
-  const float npe_to_V_;
-  const std::vector<double> sigmaRelTOFHIRenergy_;
+
+  const std::vector<double> paramPulseAmp_;
+  const std::vector<double> paramPulseAmpRes_;
 
   // adc/tdc bitwidths
   const uint32_t adcNbits_, tdcNbits_;
 
   // synthesized adc/tdc information
-  const float adcSaturation_MIP_;
+  //const float adcSaturation_MIP_;
   const uint32_t adcBitSaturation_;
-  const float adcLSB_MIP_;
+  //const float adcLSB_MIP_;
   const float adcThreshold_MIP_;
   const float toaLSB_ns_;
   const uint32_t tdcBitSaturation_;
@@ -89,11 +93,8 @@ private:
   const float cosPhi_;
   const float sinPhi_;
 
-  const float scintillatorDecayTime2_;
   const float scintillatorDecayTimeInv_;
   const float sigmaConst2_;
-
-  const BTLPulseShape btlPulseShape_;
 };
 
 #endif
