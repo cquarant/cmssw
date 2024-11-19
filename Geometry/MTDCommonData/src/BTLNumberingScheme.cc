@@ -123,13 +123,13 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
         runitCopy = (modtyp - 1) * BTLDetId::kRUPerTypeV2 + baseNumber.getCopyNumber(2) - 1;
       }
 
-      modCopy = baseNumber.getCopyNumber(1) - 1;
-      crystal = baseNumber.getCopyNumber(0) - 1;
+      modCopy = int(baseNumber.getCopyNumber(1)) - 1;
+      crystal = int(baseNumber.getCopyNumber(0)) - 1;
 
       // Detector and sensor module numbers from global module number 0-23
       dmodCopy = int((modCopy / BTLDetId::kDModulesInRUCol) / BTLDetId::kSModulesInDM) + (modCopy % BTLDetId::kDModulesInRUCol) * BTLDetId::kDModulesInRURow;
       smodCopy = int( modCopy / BTLDetId::kDModulesInRUCol ) % BTLDetId::kSModulesInDM;
-      
+
       // error checking
      if (0 > int(crystal) || BTLDetId::kCrystalsPerModuleV2 < crystal) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "

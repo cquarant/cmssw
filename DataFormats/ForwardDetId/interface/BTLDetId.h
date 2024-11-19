@@ -145,7 +145,6 @@ public:
   /** Returns BTL module number [1-24] (OLD BTL NUMBERING). */
   inline int module() const {
     int mod = ((dmodule() % kDModulesInRURow) * (kSModulesInDM * kDModulesInRUCol) + int(dmodule() / kDModulesInRURow) + kDModulesInRUCol * smodule()) + 1;
-    if (mtdSide() == 0) mod = mod - 2*(((mod - 1) % 3) - 1);
     return mod;
   }
 
@@ -186,8 +185,9 @@ public:
                          int((oldModule - 1) / (kDModulesInRUCol * kSModulesInDM));
     uint32_t senModule = int((oldModule  - 1) / kDModulesInRUCol) % kSModulesInDM;
 
-    // change detector and sensor module number if on the negative side
-    if (mtdSide()==0) detModule = (detModule + kDModulesInRURow * (int(detModule)/kDModulesInRURow - 1)) % (kDModulesInRUCol * kDModulesInRURow);
+    // change detector module number if on the negative side
+    int zside = int(mtdSide());
+    if (zside < 1) detModule = detModule - 2 * kDModulesInRURow * (int(detModule/kDModulesInRURow) - 1);
 
     // convert old RU and type number into new RU number
     uint32_t oldRU = (rawid >> kBTLoldRUOffset) & kBTLoldRUMask;
