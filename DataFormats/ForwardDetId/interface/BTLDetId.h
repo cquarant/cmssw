@@ -5,6 +5,7 @@
 #include <iostream>
 #include <ostream>
 #include <array>
+#include <bitset>
 
 /** 
     @class BTLDetId
@@ -63,7 +64,7 @@ public:
   static constexpr uint32_t kCrystalTypes = 3;
 
   // conversion
-  static constexpr uint32_t kBTLoldFieldMask = 0xFFFFF;
+  static constexpr uint32_t kBTLoldFieldMask = 0x3FFFFF;
   static constexpr uint32_t kBTLNewFormat = 1 << 15;
 
   // 
