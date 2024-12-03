@@ -354,7 +354,7 @@ void BtlLocalRecoValidation::analyze(const edm::Event& iEvent, const edm::EventS
     if (simHit.tof() < 0 || simHit.tof() > 25.)
       continue;
 
-    DetId id = simHit.detUnitId();
+    DetId id = BTLDetId(simHit.detUnitId());
 
     auto simHitIt = m_btlSimHits.emplace(id.rawId(), MTDHit()).first;
 
