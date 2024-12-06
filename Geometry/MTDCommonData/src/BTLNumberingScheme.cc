@@ -131,35 +131,35 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
       smodCopy = int( modCopy / BTLDetId::kDModulesInRUCol ) % BTLDetId::kSModulesInDM;
 
       // error checking
-     if (0 > int(crystal) || BTLDetId::kCrystalsPerModuleV2 < crystal) {
+     if (0 > int(crystal) || BTLDetId::kCrystalsPerModuleV2-1 < crystal) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad crystal number = " << int(crystal)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(0) - 1;
         return 0;
       }
 
-      if (0 > int(modCopy) || BTLDetId::kModulesPerRUV2 < modCopy) {
+      if (0 > int(modCopy) || BTLDetId::kModulesPerRUV2-1 < modCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad module copy = " << int(modCopy)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(1) - 1;
         return 0;
       }
 
-      if (0 > int(smodCopy) || BTLDetId::kSModulesPerDM < smodCopy) {
+      if (0 > int(smodCopy) || BTLDetId::kSModulesPerDM-1 < smodCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad detector module copy = " << int(smodCopy)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(1) - 1;
         return 0;
       }
 
-      if (0 > int(dmodCopy) || BTLDetId::kDModulesPerRU < dmodCopy) {
+      if (0 > int(dmodCopy) || BTLDetId::kDModulesPerRU-1 < dmodCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad detector module copy = " << int(dmodCopy)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(1) - 1;
         return 0;
       }
 
-      if (0 > int(runitCopy) || BTLDetId::kRUPerRod < runitCopy) {
+      if (0 > int(runitCopy) || BTLDetId::kRUPerRod-1 < runitCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad readout unit copy = " << int(runitCopy)
                                    << " module type = " << int(modtyp)
@@ -168,7 +168,7 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
         return 0;
       }
 
-      if (0 > int(rodCopy) || BTLDetId::HALF_ROD < rodCopy) {
+      if (0 > int(rodCopy) || BTLDetId::HALF_ROD-1 < rodCopy) {
         edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                    << "****************** Bad rod copy = " << int(rodCopy)
                                    << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(3);
@@ -225,35 +225,35 @@ uint32_t BTLNumberingScheme::getUnitID(const MTDBaseNumber& baseNumber) const {
 
     // error checking
 
-    if (0 > int(modCopy) || BTLDetId::kModulesPerRUV2 < modCopy) {
+    if (0 > int(modCopy) || BTLDetId::kModulesPerRUV2-1 < modCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                  << "****************** Bad module copy = " << int(modCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(0) - 1;
       return 0;
     }
 
-    if (0 > int(smodCopy) || BTLDetId::kSModulesPerDM < smodCopy) {
+    if (0 > int(smodCopy) || BTLDetId::kSModulesPerDM-1 < smodCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                  << "****************** Bad detector module copy = " << int(smodCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(0) - 1;
       return 0;
     }
 
-    if (0 > int(dmodCopy) || BTLDetId::kDModulesPerRU < dmodCopy) {
+    if (0 > int(dmodCopy) || BTLDetId::kDModulesPerRU-1 < dmodCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                  << "****************** Bad detector module copy = " << int(dmodCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(0) - 1;
       return 0;
     }
 
-    if (0 > int(runitCopy) || BTLDetId::kRUPerRod < runitCopy) {
+    if (0 > int(runitCopy) || BTLDetId::kRUPerRod-1 < runitCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                  << "****************** Bad readout unit copy = " << int(runitCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(1) - 1;
       return 0;
     }
 
-    if (0 > int(rodCopy) || BTLDetId::HALF_ROD < rodCopy) {
+    if (0 > int(rodCopy) || BTLDetId::HALF_ROD-1 < rodCopy) {
       edm::LogWarning("MTDGeom") << "BTLNumberingScheme::getUnitID(): "
                                  << "****************** Bad rod copy = " << int(rodCopy)
                                  << ", Volume Number (counting from 0)= " << baseNumber.getCopyNumber(2);
