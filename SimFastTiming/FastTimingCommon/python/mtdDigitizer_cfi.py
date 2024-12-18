@@ -26,6 +26,8 @@ _barrel_MTDDigitizer = cms.PSet(
         SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
         TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
         TimeAtThr2RiseParam       = cms.vdouble(5.2e6,-0.704), # time at threshold T2 (28 DAC) vs Gain * Npe on the rising edge
+        TimeBranchDelay           = cms.double(0.75),   # [ns], time delay of the TOFHiR time branch
+        TimeOverThr1Param         = cms.vdouble(1.4776e9,7.93403,-3.78578e-10,5.42505e-18,-2.27325e-27,-7.32799e-10,12.933), # time over the T1 threshold vs Gain * Npe
         SmearTimeForOOTtails      = cms.bool(True),     # switch to turn ON/OFF the uncertainty due to photons from OOT hits
         ScintillatorRiseTime      = cms.double(1.1),    # [ns]
         ScintillatorDecayTime     = cms.double(40.),    # [ns]

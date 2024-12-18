@@ -19,6 +19,8 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       sipmGain_(pset.getParameter<double>("SiPMGain")),
       paramThr1Rise_(pset.getParameter<std::vector<double>>("TimeAtThr1RiseParam")),
       paramThr2Rise_(pset.getParameter<std::vector<double>>("TimeAtThr2RiseParam")),
+      timeBranchDelay_(pset.getParameter<double>("TimeBranchDelay")),
+      paramTimeOverThr1_(pset.getParameter<std::vector<double>>("TimeOverThr1Param")),
       smearTimeForOOTtails_(pset.getParameter<bool>("SmearTimeForOOTtails")),
       scintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
       scintillatorDecayTime_(pset.getParameter<double>("ScintillatorDecayTime")),
@@ -60,12 +62,17 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
                                 << "\n sigma total        = " << std::setw(14)
                                 << std::sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4 + s5 * s5);
 #endif
+
+  // --- Create a map to store the enalbing times of the TOFHiR readout channels
+  channelEnablingTime_ = new std::unordered_map<uint32_t, std::array<float, 2>>();
 }
+
+BTLElectronicsSim::~BTLElectronicsSim() { delete channelEnablingTime_; }
 
 void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
                             BTLDigiCollection& output,
                             CLHEP::HepRandomEngine* hre) const {
-  // --- Generate a different clock jitter for each readout unit
+  // --- Generate and save in a vector a different clock jitter for each readout unit
   std::vector<float> v_smearingClockRU;
   for (unsigned int iRU = 0; iRU < 2 * BTLDetId::HALF_ROD * BTLDetId::kCrystalTypes * BTLDetId::kRUPerTypeV2; ++iRU)
     v_smearingClockRU.push_back(CLHEP::RandGaussQ::shoot(hre, 0., sigmaClockRU_));
@@ -87,13 +94,15 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     chargeColl.fill(0.f);
     toa1.fill(0.f);
     toa2.fill(0.f);
+    std::array<float, 2> enablingTime = {{0.f, 0.f}};
     for (size_t iside = 0; iside < 2; iside++) {
       // --- Get the number of photo-electrons and apply the Poissonian smearing
       float npe = (it->second).hit_info[2 * iside][iBX] * f_npeSmearing;
 
       // --- Skip the hits that are below the energy threshold
-      if (npe < energyThreshold_)
+      if (npe < energyThreshold_) {
         continue;
+      }
 
       // ================================================================================
       //  TOFHiR's time branch
@@ -122,6 +131,19 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
             float hit_time = (it->second).hit_info[1 + 2 * iside][ibx] + bxTime_ * (ibx - mtd_digitizer::kInTimeBX);
             float npe_oot = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2 * iside][ibx]);
             rate_oot += npe_oot * exp(hit_time * scintillatorDecayTimeInv_) * scintillatorDecayTimeInv_;
+
+            // --- Check if a hit in the previous BX is holding the channel
+            if (ibx == mtd_digitizer::kInTimeBX - 1) {
+
+	      // Should we add a cut on hit energy here?
+
+              float enablingTimeFromOOT = (it->second).hit_info[1 + 2 * iside][ibx] + time_at_Thr1Rise(npe_oot) +
+                                          time_over_Thr1(npe_oot) + timeBranchDelay_ - bxTime_;
+
+              if ((*channelEnablingTime_)[(it->first).detid_][iside] < enablingTimeFromOOT) {
+                (*channelEnablingTime_)[(it->first).detid_][iside] = enablingTimeFromOOT;
+              }
+            }
           }
         }  // ibx loop
 
@@ -132,6 +154,15 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
           finalToA2 += smearing_oot;
         }
       }  // if smearTimeForOOTtails_
+
+      // --- Skip the hit if the readout channel is not enabled
+      if (channelEnablingTime_->contains((it->first).detid_) &&
+          (it->second).hit_info[1 + 2 * iside][iBX] < (*channelEnablingTime_)[(it->first).detid_][iside]) {
+        continue;
+      }
+
+      // --- Calculate the enabling time for this channel
+      enablingTime[iside] = finalToA1 + time_over_Thr1(npe) + timeBranchDelay_;
 
       // --- Stochastich term
       float sigmaStoc = sigma_stochastic(npe);
@@ -172,13 +203,18 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       float amp = pulse_amp(npe);
 
       // --- Get the relative uncertainty on the pulse amplitude
-      //     (the unsmeared Npe is used, because the parameterization of the amplitude
-      //      resolution already includes the photostatistics fluctuation)
+      //     (here the unsmeared Npe is used, because the parameterization of the
+      //      amplitude resolution already includes the photostatistics fluctuation)
       float amp_res = pulse_ampRes((it->second).hit_info[2 * iside][iBX]);
 
       chargeColl[iside] = amp * (1. + amp_res);
 
     }  // iside loop
+
+    // --- Update the L and R enabling times for the current cell
+    if (enablingTime[0] != 0. || enablingTime[1] != 0.) {
+      channelEnablingTime_->insert_or_assign((it->first).detid_, enablingTime);
+    }
 
     // --- Run the shaper to create a new data frame
     BTLDataFrame rawDataFrame(it->first.detid_);
@@ -186,6 +222,12 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     updateOutput(output, rawDataFrame);
 
   }  // MTDSimHitDataAccumulator loop
+
+  // --- Set the enabling time for the next BX
+  for (auto& enablingTime : *channelEnablingTime_) {
+    enablingTime.second[0] = std::max(enablingTime.second[0] - bxTime_, 0.f);
+    enablingTime.second[1] = std::max(enablingTime.second[1] - bxTime_, 0.f);
+  }
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
@@ -249,6 +291,18 @@ float BTLElectronicsSim::time_at_Thr1Rise(const float& npe) const {
 
 float BTLElectronicsSim::time_at_Thr2Rise(const float& npe) const {
   return paramThr2Rise_[0] * std::pow(sipmGain_ * npe, paramThr2Rise_[1]);
+}
+
+float BTLElectronicsSim::time_over_Thr1(const float& npe) const {
+  float gainXnpe = sipmGain_ * npe;
+
+  float time_over_thr1 =
+      (gainXnpe <= paramTimeOverThr1_[0]
+           ? paramTimeOverThr1_[4] * gainXnpe * gainXnpe * gainXnpe + paramTimeOverThr1_[3] * gainXnpe * gainXnpe +
+                 paramTimeOverThr1_[2] * gainXnpe + paramTimeOverThr1_[1]
+           : paramTimeOverThr1_[5] * gainXnpe + paramTimeOverThr1_[6]);
+
+  return time_over_thr1;
 }
 
 float BTLElectronicsSim::sigma_stochastic(const float& npe) const {

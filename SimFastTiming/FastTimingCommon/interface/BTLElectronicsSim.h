@@ -20,6 +20,8 @@ class BTLElectronicsSim {
 public:
   BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC);
 
+  ~BTLElectronicsSim();
+
   void getEvent(const edm::Event& evt) {}
 
   void getEventSetup(const edm::EventSetup& evt) {}
@@ -38,9 +40,13 @@ public:
   static constexpr int dfSIZE = 2;
 
 private:
+  std::unordered_map<uint32_t, std::array<float, 2>>* channelEnablingTime_;
+
   float time_at_Thr1Rise(const float& npe) const;
 
   float time_at_Thr2Rise(const float& npe) const;
+
+  float time_over_Thr1(const float& npe) const;
 
   float sigma_stochastic(const float& npe) const;
 
@@ -63,6 +69,8 @@ private:
   const float sipmGain_;
   const std::vector<double> paramThr1Rise_;
   const std::vector<double> paramThr2Rise_;
+  const float timeBranchDelay_;
+  const std::vector<double> paramTimeOverThr1_;
   const bool smearTimeForOOTtails_;
   const float scintillatorRiseTime_;
   const float scintillatorDecayTime_;
@@ -82,9 +90,7 @@ private:
   const uint32_t adcNbits_, tdcNbits_;
 
   // synthesized adc/tdc information
-  //const float adcSaturation_MIP_;
   const uint32_t adcBitSaturation_;
-  //const float adcLSB_MIP_;
   const float adcThreshold_MIP_;
   const float toaLSB_ns_;
   const uint32_t tdcBitSaturation_;
