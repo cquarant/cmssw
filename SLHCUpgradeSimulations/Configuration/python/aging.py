@@ -254,6 +254,7 @@ def ageMTD(process,lumi):
             "dark_count_rate": 12.,
             "energy_threshold": 1444.,
             "sipm_gain": 417840.,
+            "pulse_amp_a": [-1.1, 1.9e-8],
             "time_at_thr1rise": [3.1e5, -0.580],
             "time_at_thr2rise": [1.11e6, -0.631],
             "time_over_thr1": [1.3e9, 7.93403, -2.51351e-10, 5.98501e-18, -3.326821e-27, -7.61576e-10, 13.21],
@@ -265,6 +266,7 @@ def ageMTD(process,lumi):
             "dark_count_rate": 20.,
             "energy_threshold": 1004.,
             "sipm_gain": 330990.,
+            "pulse_amp_a": [-1.1, 1.9e-8],
             "time_at_thr1rise": [3.1e5, -0.580],
             "time_at_thr2rise": [1.11e6, -0.631],
             "time_over_thr1": [1.3e9, 7.93403, -2.51351e-10, 5.98501e-18, -3.326821e-27, -7.61576e-10, 13.21],
@@ -280,6 +282,7 @@ def ageMTD(process,lumi):
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.EnergyThreshold = cms.double(mtd_parameters[lumi]["energy_threshold"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.SiPMgain = cms.double(mtd_parameters[lumi]["sipm_gain"])
+            process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.PulseAmpAParam = cms.vdouble(mtd_parameters[lumi]["pulse_amp_a"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr1rise"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr2rise"])
             process.mix.digitizers.fastTimingLayer.barrelDigitizer.ElectronicsSimulation.TimeOverThr1Param = cms.vdouble(mtd_parameters[lumi]["time_over_thr1"])
@@ -292,6 +295,7 @@ def ageMTD(process,lumi):
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.EnergyThreshold = cms.double(mtd_parameters[lumi]["energy_threshold"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.DarkCountRate  = cms.double(mtd_parameters[lumi]["dark_count_rate"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.SiPMgain = cms.double(mtd_parameters[lumi]["sipm_gain"])
+            process.mixData.workers.mtdBarrel.ElectronicsSimulation.PulseAmpAParam = cms.vdouble(mtd_parameters[lumi]["pulse_amp_a"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr1rise"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.TimeAtThr1RiseParam = cms.vdouble(mtd_parameters[lumi]["time_at_thr2rise"])
             process.mixData.workers.mtdBarrel.ElectronicsSimulation.TimeOverThr1Param = cms.vdouble(mtd_parameters[lumi]["time_over_thr1"])

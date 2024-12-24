@@ -13,13 +13,15 @@ using namespace mtd;
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
     : debug_(pset.getUntrackedParameter<bool>("debug", false)),
       bxTime_(pset.getParameter<double>("bxTime")),
-      energyThreshold_(pset.getParameter<double>("EnergyThreshold")),
-      channelTimeOffset_(pset.getParameter<double>("ChannelTimeOffset")),
-      smearChannelTimeOffset_(pset.getParameter<double>("SmearChannelTimeOffset")),
+      lcepositionSlope_(pset.getParameter<double>("LCEpositionSlope")),
+      sigmaLCEpositionSlope_(pset.getParameter<double>("SigmaLCEpositionSlope")),
+      pulseAmpThreshold_(pset.getParameter<double>("PulseAmpThreshold")),
+      t1Delay_(pset.getParameter<double>("T1Delay")),
+      smearT1Delay_(pset.getParameter<double>("SmearT1Delay")),
       sipmGain_(pset.getParameter<double>("SiPMGain")),
+      paramPulseAmpA_(pset.getParameter<std::vector<double>>("PulseAmpAParam")),
       paramThr1Rise_(pset.getParameter<std::vector<double>>("TimeAtThr1RiseParam")),
       paramThr2Rise_(pset.getParameter<std::vector<double>>("TimeAtThr2RiseParam")),
-      timeBranchDelay_(pset.getParameter<double>("TimeBranchDelay")),
       paramTimeOverThr1_(pset.getParameter<std::vector<double>>("TimeOverThr1Param")),
       smearTimeForOOTtails_(pset.getParameter<bool>("SmearTimeForOOTtails")),
       scintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
@@ -83,24 +85,44 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     // --- Digitize only the in-time bucket
     const unsigned int iBX = mtd_digitizer::kInTimeBX;
 
-    if ((it->second).hit_info[0][iBX] == 0) {
+    // --- Apply a common Poisson fluctuation and different Gaussian smearings
+    //     for the LCE position slope to the right and left hits of the bar
+    float npe[2] = {0.f, 0.f};
+    // If both sides of the bar have an hit:
+    if ((it->second).hit_info[0][iBX] != 0. && (it->second).hit_info[2][iBX] != 0.) {
+      float npe_origin = 0.5 * ((it->second).hit_info[0][iBX] + (it->second).hit_info[2][iBX]);
+      float x_origin =
+          0.5 * ((it->second).hit_info[0][iBX] - (it->second).hit_info[2][iBX]) / (npe_origin * lcepositionSlope_);
+
+      float npe_fluctuated = CLHEP::RandPoissonQ::shoot(hre, npe_origin);
+
+      float lceSlope_smearing = CLHEP::RandGaussQ::shoot(hre, 0., sigmaLCEpositionSlope_);
+      npe[0] = npe_fluctuated * (1. + (sigmaLCEpositionSlope_ + lceSlope_smearing) * x_origin);
+
+      lceSlope_smearing = CLHEP::RandGaussQ::shoot(hre, 0., sigmaLCEpositionSlope_);
+      npe[1] = npe_fluctuated * (1. - (sigmaLCEpositionSlope_ + lceSlope_smearing) * x_origin);
+
+    }
+    // It there is a hit only on the right side of the bar:
+    else if ((it->second).hit_info[2][iBX] == 0.) {
+      // NB: no smearing applied for the LCE position slope
+      npe[0] = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[0][iBX]);
+    }
+    // It there is a hit only on the left side of the bar:
+    else if ((it->second).hit_info[0][iBX] == 0.) {
+      // NB: no smearing applied for the LCE position slope
+      npe[1] = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2][iBX]);
+    } else {
       continue;
     }
-
-    // --- Calculate a Poissonian smearing to be applied to the Npe of both bar sides
-    float f_npeSmearing =
-        CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[0][iBX]) / (it->second).hit_info[0][iBX];
 
     chargeColl.fill(0.f);
     toa1.fill(0.f);
     toa2.fill(0.f);
     std::array<float, 2> enablingTime = {{0.f, 0.f}};
     for (size_t iside = 0; iside < 2; iside++) {
-      // --- Get the number of photo-electrons and apply the Poissonian smearing
-      float npe = (it->second).hit_info[2 * iside][iBX] * f_npeSmearing;
-
-      // --- Skip the hits that are below the energy threshold
-      if (npe < energyThreshold_) {
+      // --- Skip the hits that are below the pulse amplitude threshold
+      if (pulse_amp_A(npe[iside]) < pulseAmpThreshold_) {
         continue;
       }
 
@@ -108,19 +130,27 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       //  TOFHiR's time branch
       // ================================================================================
 
-      // --- Get the hit time of arrival and add an offset to the T1 channel
-      float finalToA1 = (it->second).hit_info[1 + 2 * iside][iBX] + channelTimeOffset_;
+      // --- Get the hit time of arrival and add an optional delay to the T1 channel
+      float finalToA1 = (it->second).hit_info[1 + 2 * iside][iBX] + t1Delay_;
 
-      if (smearChannelTimeOffset_ > 0.) {
-        float timeSmearing = CLHEP::RandGaussQ::shoot(hre, 0., smearChannelTimeOffset_);
-        finalToA1 += timeSmearing;
+      if (smearT1Delay_ > 0.) {
+        float t1Delay_smearing = CLHEP::RandGaussQ::shoot(hre, 0., smearT1Delay_);
+        finalToA1 += t1Delay_smearing;
       }
 
       float finalToA2 = (it->second).hit_info[1 + 2 * iside][iBX];
 
       // --- Get the values of T1 and T2 at the two thresholds on the pulse rising edge
-      finalToA1 += time_at_Thr1Rise(npe);
-      finalToA2 += time_at_Thr2Rise(npe);
+      float time_at_T1 = time_at_Thr1Rise(npe[iside]);
+      float time_at_T2 = time_at_Thr2Rise(npe[iside]);
+
+      // --- Skip the hit if either T1 or T2 doesn't reach the threshold within
+      //     the BX time (this is kludge to emulate the TOFHiR trigger logic on T1 and T2)
+      if (time_at_T1 > bxTime_ || time_at_T2 > bxTime_) {
+        continue;
+      }
+      finalToA1 += time_at_T1;
+      finalToA2 += time_at_T2;
 
       // --- Estimate the time uncertainty due to photons from earlier OOT hits in the current BTL cell
       if (smearTimeForOOTtails_) {
@@ -134,21 +164,20 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
             // --- Check if a hit in the previous BX is holding the channel
             if (ibx == mtd_digitizer::kInTimeBX - 1) {
+              if (pulse_amp_A(npe_oot) > pulseAmpThreshold_) {
+                float enablingTimeFromOOT = (it->second).hit_info[1 + 2 * iside][ibx] + time_at_Thr1Rise(npe_oot) +
+                                            time_over_Thr1(npe_oot) + t1Delay_ - bxTime_;
 
-	      // Should we add a cut on hit energy here?
-
-              float enablingTimeFromOOT = (it->second).hit_info[1 + 2 * iside][ibx] + time_at_Thr1Rise(npe_oot) +
-                                          time_over_Thr1(npe_oot) + timeBranchDelay_ - bxTime_;
-
-              if ((*channelEnablingTime_)[(it->first).detid_][iside] < enablingTimeFromOOT) {
-                (*channelEnablingTime_)[(it->first).detid_][iside] = enablingTimeFromOOT;
+                if ((*channelEnablingTime_)[(it->first).detid_][iside] < enablingTimeFromOOT) {
+                  (*channelEnablingTime_)[(it->first).detid_][iside] = enablingTimeFromOOT;
+                }
               }
             }
           }
         }  // ibx loop
 
         if (rate_oot > 0.) {
-          float sigma_oot = sqrt(rate_oot * scintillatorRiseTime_) * scintillatorDecayTime_ / npe;
+          float sigma_oot = sqrt(rate_oot * scintillatorRiseTime_) * scintillatorDecayTime_ / npe[iside];
           float smearing_oot = CLHEP::RandGaussQ::shoot(hre, 0., sigma_oot);
           finalToA1 += smearing_oot;
           finalToA2 += smearing_oot;
@@ -162,16 +191,16 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       }
 
       // --- Calculate the enabling time for this channel
-      enablingTime[iside] = finalToA1 + time_over_Thr1(npe) + timeBranchDelay_;
+      enablingTime[iside] = finalToA1 + time_over_Thr1(npe[iside]) + t1Delay_;
 
       // --- Stochastich term
-      float sigmaStoc = sigma_stochastic(npe);
+      float sigmaStoc = sigma_stochastic(npe[iside]);
       finalToA1 += CLHEP::RandGaussQ::shoot(hre, 0., sigmaStoc);
       finalToA2 += CLHEP::RandGaussQ::shoot(hre, 0., sigmaStoc);
 
       // --- Add in quadrature the uncertainties due to the SiPM DCR and the electronic noise
-      float sigmaDCR = sigma_DCR(npe);
-      float sigmaElec = sigma_electronics(npe);
+      float sigmaDCR = sigma_DCR(npe[iside]);
+      float sigmaElec = sigma_electronics(npe[iside]);
       float sigma2_tot_thr1 = sigmaDCR * sigmaDCR + sigmaElec * sigmaElec;
 
       // --- Add in quadrature the uncertainties independent of Npe: digitization and global clock distribution
@@ -200,7 +229,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       // ================================================================================
 
       // --- Get the pulse amplitude in ADC counts
-      float amp = pulse_amp(npe);
+      float amp = pulse_amp(npe[iside]);
 
       // --- Get the relative uncertainty on the pulse amplitude
       //     (here the unsmeared Npe is used, because the parameterization of the
@@ -283,6 +312,11 @@ void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame
   if (putInEvent) {
     coll.push_back(dataFrame);
   }
+}
+
+float BTLElectronicsSim::pulse_amp_A(const float& npe) const {
+  float gainXnpe = sipmGain_ * npe;
+  return paramPulseAmpA_[0] + paramPulseAmpA_[1] * gainXnpe;
 }
 
 float BTLElectronicsSim::time_at_Thr1Rise(const float& npe) const {

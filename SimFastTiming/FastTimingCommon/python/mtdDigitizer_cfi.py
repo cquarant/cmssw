@@ -1,8 +1,9 @@
 import FWCore.ParameterSet.Config as cms
 
 _common_BTLparameters = cms.PSet(
-    bxTime      = cms.double(25),    # [ns]
-    LightOutput = cms.double(1265.), # [photons/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Ef
+    bxTime           = cms.double(25),    # [ns]
+    LightOutput      = cms.double(2285.), # [npe/MeV], including Light Yield, Light Collection Efficincy and Photon Detection Efficiency
+    LCEpositionSlope = cms.double(0.038)  # [1/cm] LCE variation vs longitudinal position shift
 )
 
 _barrel_MTDDigitizer = cms.PSet(
@@ -15,18 +16,20 @@ _barrel_MTDDigitizer = cms.PSet(
     premixStage1MaxCharge = cms.double(1e6),
     DeviceSimulation = cms.PSet(
         _common_BTLparameters,
-        LightCollectionSlope     = cms.double(0.075),   # [ns/cm]
-        LCEpositionSlope         = cms.double(0.071),   # [1/cm] LCE variation vs longitudinal position shift
+        LightCollectionSlope      = cms.double(0.190),  # [ns/cm]
+        SigmaLightCollectionSlope = cms.double(0.009)   # [ns/cm] sigma of the light collection slope
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
-        EnergyThreshold           = cms.double(2285.),  # [photo-electrons]
-        ChannelTimeOffset         = cms.double(0.),     # [ns]
-        SmearChannelTimeOffset    = cms.double(0.),     # [ns]
+        #LCEpositionSlope          = cms.double(0.038),  # [1/cm] LCE variation vs longitudinal position shift
+        SigmaLCEpositionSlope     = cms.double(0.018),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
+        PulseAmpThreshold         = cms.double(5.),     # [uA]
+        T1Delay                   = cms.double(0.),     # [ns]
+        SmearT1Delay              = cms.double(0.),     # [ns]
         SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
+        PulseAmpAParam            = cms.vdouble(-1.3, 1.01e-8), # pulse amplitude in uA vs Gain * Npe
         TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
         TimeAtThr2RiseParam       = cms.vdouble(5.2e6,-0.704), # time at threshold T2 (28 DAC) vs Gain * Npe on the rising edge
-        TimeBranchDelay           = cms.double(0.75),   # [ns], time delay of the TOFHiR time branch
         TimeOverThr1Param         = cms.vdouble(1.4776e9,7.93403,-3.78578e-10,5.42505e-18,-2.27325e-27,-7.32799e-10,12.933), # time over the T1 threshold vs Gain * Npe
         SmearTimeForOOTtails      = cms.bool(True),     # switch to turn ON/OFF the uncertainty due to photons from OOT hits
         ScintillatorRiseTime      = cms.double(1.1),    # [ns]
@@ -47,7 +50,7 @@ _barrel_MTDDigitizer = cms.PSet(
         adcNbits                  = cms.uint32(10),     # number of ADC bits
         tdcNbits                  = cms.uint32(10),     # number of TDC bits
         adcThreshold_MIP          = cms.double(327),    # [ADC counts], average MIP energy
-        toaLSB_ns                 = cms.double(0.020),  # [ns], TDC time binning
+        toaLSB_ns                 = cms.double(0.020)   # [ns], TDC time binning
         )
 
 

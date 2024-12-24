@@ -42,6 +42,8 @@ public:
 private:
   std::unordered_map<uint32_t, std::array<float, 2>>* channelEnablingTime_;
 
+  float pulse_amp_A(const float& npe) const;
+
   float time_at_Thr1Rise(const float& npe) const;
 
   float time_at_Thr2Rise(const float& npe) const;
@@ -63,13 +65,15 @@ private:
   const bool debug_;
 
   const float bxTime_;
-  const float energyThreshold_;
-  const float channelTimeOffset_;
-  const float smearChannelTimeOffset_;
+  const float lcepositionSlope_;
+  const float sigmaLCEpositionSlope_;
+  const float pulseAmpThreshold_;
+  const float t1Delay_;
+  const float smearT1Delay_;
   const float sipmGain_;
+  const std::vector<double> paramPulseAmpA_;
   const std::vector<double> paramThr1Rise_;
   const std::vector<double> paramThr2Rise_;
-  const float timeBranchDelay_;
   const std::vector<double> paramTimeOverThr1_;
   const bool smearTimeForOOTtails_;
   const float scintillatorRiseTime_;
