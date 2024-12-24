@@ -10,7 +10,6 @@
 #include "Geometry/MTDGeometryBuilder/interface/RectangularMTDTopology.h"
 #include "Geometry/MTDCommonData/interface/MTDTopologyMode.h"
 
-#include "CLHEP/Random/RandPoissonQ.h"
 #include "CLHEP/Random/RandGaussQ.h"
 
 BTLDeviceSim::BTLDeviceSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
@@ -21,7 +20,8 @@ BTLDeviceSim::BTLDeviceSim(const edm::ParameterSet& pset, edm::ConsumesCollector
       bxTime_(pset.getParameter<double>("bxTime")),
       lightOutput_(pset.getParameter<double>("LightOutput")),
       lightCollSlope_(pset.getParameter<double>("LightCollectionSlope")),
-      LCEpositionSlope_(pset.getParameter<double>("LCEpositionSlope")) {}
+      sigmaLightCollSlope_(pset.getParameter<double>("SigmaLightCollectionSlope")),
+      lcepositionSlope_(pset.getParameter<double>("LCEpositionSlope")) {}
 
 void BTLDeviceSim::getEventSetup(const edm::EventSetup& evs) {
   geom_ = &evs.getData(geomToken_);
@@ -84,12 +84,15 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     // --- Get the simHit energy and convert it from MeV to photo-electrons
     float Npe = convertGeVToMeV(hit.energyLoss()) * lightOutput_;
 
-    // --- Calculate the light propagation time to the crystal bases (labeled L and R)
+    // --- Calculate the light propagation time to the crystal sides (labeled L and R)
+    //     applying a Gaussian smearing to the light collection slope
     double distR = 0.5 * topo.pitch().first - convertMmToCm(hit.localPosition().x());
     double distL = 0.5 * topo.pitch().first + convertMmToCm(hit.localPosition().x());
 
-    double tR = std::get<2>(hitRef) + lightCollSlope_ * distR;
-    double tL = std::get<2>(hitRef) + lightCollSlope_ * distL;
+    double smearing_LCslope = CLHEP::RandGaussQ::shoot(hre, 0., sigmaLightCollSlope_);
+    double tR = std::get<2>(hitRef) + (lightCollSlope_ + smearing_LCslope) * distR;
+    smearing_LCslope = CLHEP::RandGaussQ::shoot(hre, 0., sigmaLightCollSlope_);
+    double tL = std::get<2>(hitRef) + (lightCollSlope_ + smearing_LCslope) * distL;
 
     // --- Accumulate in 15 buckets of 25ns (9 pre-samples, 1 in-time, 5 post-samples)
     const int iBXR = std::floor(tR / bxTime_) + mtd_digitizer::kInTimeBX;
@@ -98,7 +101,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     // --- Right side
     if (iBXR > 0 && iBXR < mtd_digitizer::kNumberOfBX) {
       // Accumulate the energy of simHits in the same crystal
-      (simHitIt->second).hit_info[0][iBXR] += Npe * (1. + LCEpositionSlope_ * convertMmToCm(hit.localPosition().x()));
+      (simHitIt->second).hit_info[0][iBXR] += Npe * (1. + lcepositionSlope_ * convertMmToCm(hit.localPosition().x()));
 
       // Store the time of the first SimHit in the i-th BX
       if ((simHitIt->second).hit_info[1][iBXR] == 0 || tR < (simHitIt->second).hit_info[1][iBXR])
@@ -108,7 +111,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     // --- Left side
     if (iBXL > 0 && iBXL < mtd_digitizer::kNumberOfBX) {
       // Accumulate the energy of simHits in the same crystal
-      (simHitIt->second).hit_info[2][iBXL] += Npe * (1. - LCEpositionSlope_ * convertMmToCm(hit.localPosition().x()));
+      (simHitIt->second).hit_info[2][iBXL] += Npe * (1. - lcepositionSlope_ * convertMmToCm(hit.localPosition().x()));
 
       // Store the time of the first SimHit in the i-th BX
       if ((simHitIt->second).hit_info[3][iBXL] == 0 || tL < (simHitIt->second).hit_info[3][iBXL])

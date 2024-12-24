@@ -42,7 +42,8 @@ private:
   const float bxTime_;
   const float lightOutput_;
   const float lightCollSlope_;
-  const float LCEpositionSlope_;
+  const float sigmaLightCollSlope_;
+  const float lcepositionSlope_;
 };
 
 #endif
