@@ -29,9 +29,9 @@ public:
   void run(const mtd::MTDSimHitDataAccumulator& input, BTLDigiCollection& output, CLHEP::HepRandomEngine* hre) const;
 
   void runTrivialShaper(BTLDataFrame& dataFrame,
-                        const mtd::MTDSimHitData& chargeColl,
-                        const mtd::MTDSimHitData& toa1,
-                        const mtd::MTDSimHitData& toa2,
+                        const float (&charge)[2],
+                        const float (&toa1)[2],
+                        const float (&toa2)[2],
                         const uint8_t row,
                         const uint8_t col) const;
 
@@ -40,7 +40,7 @@ public:
   static constexpr int dfSIZE = 2;
 
 private:
-  std::unordered_map<uint32_t, std::array<float, 2>>* channelEnablingTime_;
+  std::unordered_map<uint32_t, std::array<float, 2>>* channelRearmingTime_;
 
   float pulse_amp_A(const float& npe) const;
 
@@ -61,6 +61,7 @@ private:
   float pulse_ampRes(const float& npe) const;
 
   static constexpr float sqrt2_ = 1.41421356f;
+  static constexpr float tofhirClock = 6.25f;
 
   const bool debug_;
 
@@ -68,6 +69,8 @@ private:
   const float lcepositionSlope_;
   const float sigmaLCEpositionSlope_;
   const float pulseAmpThreshold_;
+  const uint32_t channelRearmMode_;
+  const float channelRearmNClocks_;
   const float t1Delay_;
   const float smearT1Delay_;
   const float sipmGain_;

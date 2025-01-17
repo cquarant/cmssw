@@ -21,9 +21,11 @@ _barrel_MTDDigitizer = cms.PSet(
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
-        #LCEpositionSlope          = cms.double(0.038),  # [1/cm] LCE variation vs longitudinal position shift
         SigmaLCEpositionSlope     = cms.double(0.018),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
         PulseAmpThreshold         = cms.double(5.),     # [uA]
+        ChannelRearmMode          = cms.uint32(1),      # 0: the channel is rearmed on the falling edge of the trigger_B signal
+                                                        # 1: the channel is rearmed after ChannelRearmNClocks cycles of the TOFHiR clock
+        ChannelRearmNClocks       = cms.double(3.),     # number of TOFHiR clock cycles after which the channel is rearmed
         T1Delay                   = cms.double(0.),     # [ns]
         SmearT1Delay              = cms.double(0.),     # [ns]
         SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V

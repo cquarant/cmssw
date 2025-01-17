@@ -16,6 +16,8 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       lcepositionSlope_(pset.getParameter<double>("LCEpositionSlope")),
       sigmaLCEpositionSlope_(pset.getParameter<double>("SigmaLCEpositionSlope")),
       pulseAmpThreshold_(pset.getParameter<double>("PulseAmpThreshold")),
+      channelRearmMode_(pset.getParameter<uint32_t>("ChannelRearmMode")),
+      channelRearmNClocks_(pset.getParameter<double>("ChannelRearmNClocks")),
       t1Delay_(pset.getParameter<double>("T1Delay")),
       smearT1Delay_(pset.getParameter<double>("SmearT1Delay")),
       sipmGain_(pset.getParameter<double>("SiPMGain")),
@@ -65,11 +67,11 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
                                 << std::sqrt(s1 * s1 + s2 * s2 + s3 * s3 + s4 * s4 + s5 * s5);
 #endif
 
-  // --- Create a map to store the enalbing times of the TOFHiR readout channels
-  channelEnablingTime_ = new std::unordered_map<uint32_t, std::array<float, 2>>();
+  // --- Create a map to store the rearming times of the TOFHiR readout channels
+  channelRearmingTime_ = new std::unordered_map<uint32_t, std::array<float, 2>>();
 }
 
-BTLElectronicsSim::~BTLElectronicsSim() { delete channelEnablingTime_; }
+BTLElectronicsSim::~BTLElectronicsSim() { delete channelRearmingTime_; }
 
 void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
                             BTLDigiCollection& output,
@@ -80,7 +82,6 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     v_smearingClockRU.push_back(CLHEP::RandGaussQ::shoot(hre, 0., sigmaClockRU_));
 
   // --- Loop over the simhits (which have been propagated to the two sides of the crystal bar)
-  MTDSimHitData chargeColl, toa1, toa2;
   for (MTDSimHitDataAccumulator::const_iterator it = input.begin(); it != input.end(); it++) {
     // --- Digitize only the in-time bucket
     const unsigned int iBX = mtd_digitizer::kInTimeBX;
@@ -116,10 +117,10 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       continue;
     }
 
-    chargeColl.fill(0.f);
-    toa1.fill(0.f);
-    toa2.fill(0.f);
-    std::array<float, 2> enablingTime = {{0.f, 0.f}};
+    float charge[2] = {0.f, 0.f};
+    float toa1[2] = {0.f, 0.f};
+    float toa2[2] = {0.f, 0.f};
+    std::array<float, 2> rearmingTime = {{0.f, 0.f}};
     for (size_t iside = 0; iside < 2; iside++) {
       // --- Skip the hits that are below the pulse amplitude threshold
       if (pulse_amp_A(npe[iside]) < pulseAmpThreshold_) {
@@ -165,11 +166,13 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
             // --- Check if a hit in the previous BX is holding the channel
             if (ibx == mtd_digitizer::kInTimeBX - 1) {
               if (pulse_amp_A(npe_oot) > pulseAmpThreshold_) {
-                float enablingTimeFromOOT = (it->second).hit_info[1 + 2 * iside][ibx] + time_at_Thr1Rise(npe_oot) +
-                                            time_over_Thr1(npe_oot) + t1Delay_ - bxTime_;
+                float deadTimeFromOOT =
+                    (channelRearmMode_ == 0 ? time_over_Thr1(npe_oot) + t1Delay_ : channelRearmNClocks_ * tofhirClock);
+                float rearmingTimeFromOOT =
+                    (it->second).hit_info[1 + 2 * iside][ibx] + time_at_Thr1Rise(npe_oot) + deadTimeFromOOT - bxTime_;
 
-                if ((*channelEnablingTime_)[(it->first).detid_][iside] < enablingTimeFromOOT) {
-                  (*channelEnablingTime_)[(it->first).detid_][iside] = enablingTimeFromOOT;
+                if ((*channelRearmingTime_)[(it->first).detid_][iside] < rearmingTimeFromOOT) {
+                  (*channelRearmingTime_)[(it->first).detid_][iside] = rearmingTimeFromOOT;
                 }
               }
             }
@@ -184,14 +187,16 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
         }
       }  // if smearTimeForOOTtails_
 
-      // --- Skip the hit if the readout channel is not enabled
-      if (channelEnablingTime_->contains((it->first).detid_) &&
-          (it->second).hit_info[1 + 2 * iside][iBX] < (*channelEnablingTime_)[(it->first).detid_][iside]) {
+      // --- Skip the hit if the readout channel is not rearmed
+      if (channelRearmingTime_->contains((it->first).detid_) &&
+          (it->second).hit_info[1 + 2 * iside][iBX] < (*channelRearmingTime_)[(it->first).detid_][iside]) {
         continue;
       }
 
-      // --- Calculate the enabling time for this channel
-      enablingTime[iside] = finalToA1 + time_over_Thr1(npe[iside]) + t1Delay_;
+      // --- Calculate the rearming time for this channel
+      float deadTime =
+          (channelRearmMode_ == 0 ? time_over_Thr1(npe[iside]) + t1Delay_ : channelRearmNClocks_ * tofhirClock);
+      rearmingTime[iside] = finalToA1 + deadTime;
 
       // --- Stochastich term
       float sigmaStoc = sigma_stochastic(npe[iside]);
@@ -236,60 +241,65 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       //      amplitude resolution already includes the photostatistics fluctuation)
       float amp_res = pulse_ampRes((it->second).hit_info[2 * iside][iBX]);
 
-      chargeColl[iside] = amp * (1. + amp_res);
+      charge[iside] = amp * (1. + amp_res);
 
     }  // iside loop
 
-    // --- Update the L and R enabling times for the current cell
-    if (enablingTime[0] != 0. || enablingTime[1] != 0.) {
-      channelEnablingTime_->insert_or_assign((it->first).detid_, enablingTime);
+    // --- Update the L and R rearming times for the current cell
+    if (rearmingTime[0] != 0. || rearmingTime[1] != 0.) {
+      channelRearmingTime_->insert_or_assign((it->first).detid_, rearmingTime);
     }
 
     // --- Run the shaper to create a new data frame
     BTLDataFrame rawDataFrame(it->first.detid_);
-    runTrivialShaper(rawDataFrame, chargeColl, toa1, toa2, it->first.row_, it->first.column_);
+    runTrivialShaper(rawDataFrame, charge, toa1, toa2, it->first.row_, it->first.column_);
     updateOutput(output, rawDataFrame);
 
   }  // MTDSimHitDataAccumulator loop
 
-  // --- Set the enabling time for the next BX
-  for (auto& enablingTime : *channelEnablingTime_) {
-    enablingTime.second[0] = std::max(enablingTime.second[0] - bxTime_, 0.f);
-    enablingTime.second[1] = std::max(enablingTime.second[1] - bxTime_, 0.f);
+  // --- Set the rearming times for the next BX
+  for (auto& rearmingTime : *channelRearmingTime_) {
+    rearmingTime.second[0] = std::max(rearmingTime.second[0] - bxTime_, 0.f);
+    rearmingTime.second[1] = std::max(rearmingTime.second[1] - bxTime_, 0.f);
   }
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
-                                         const mtd::MTDSimHitData& chargeColl,
-                                         const mtd::MTDSimHitData& toa1,
-                                         const mtd::MTDSimHitData& toa2,
+                                         const float (&charge)[2],
+                                         const float (&toa1)[2],
+                                         const float (&toa2)[2],
                                          const uint8_t row,
                                          const uint8_t col) const {
   bool debug = debug_;
 #ifdef EDM_ML_DEBUG
-  for (int it = 0; it < (int)(chargeColl.size()); it++)
-    debug |= (chargeColl[it] > adcThreshold_MIP_);
+  for (int iside = 0; iside < dfSIZE; iside++) {
+    debug |= (charge[iside] > adcThreshold_MIP_);
+  }
 #endif
 
-  if (debug)
+  if (debug) {
     edm::LogVerbatim("BTLElectronicsSim") << "[runTrivialShaper]" << std::endl;
+  }
 
-  //set new ADCs
-  for (int it = 0; it < (int)(chargeColl.size()); it++) {
+  // --- Digitize the hit charge and times
+  for (int iside = 0; iside < dfSIZE; iside++) {
     BTLSample newSample;
     newSample.set(false, false, 0, 0, 0, row, col);
 
     //brute force saturation, maybe could to better with an exponential like saturation
-    const uint32_t adc = std::min((uint32_t)std::floor(chargeColl[it]), adcBitSaturation_);
-    const uint32_t tdc_time1 = std::min((uint32_t)std::floor(toa1[it] / toaLSB_ns_), tdcBitSaturation_);
-    const uint32_t tdc_time2 = std::min((uint32_t)std::floor(toa2[it] / toaLSB_ns_), tdcBitSaturation_);
+    const uint32_t adc = std::min((uint32_t)std::floor(charge[iside]), adcBitSaturation_);
+    const uint32_t tdc_time1 = std::min((uint32_t)std::floor(toa1[iside] / toaLSB_ns_), tdcBitSaturation_);
+    const uint32_t tdc_time2 = std::min((uint32_t)std::floor(toa2[iside] / toaLSB_ns_), tdcBitSaturation_);
 
     newSample.set(
-        chargeColl[it] > adcThreshold_MIP_, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
-    dataFrame.setSample(it, newSample);
+        charge[iside] > adcThreshold_MIP_, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
+    dataFrame.setSample(iside, newSample);
 
-    if (debug)
-      edm::LogVerbatim("BTLElectronicsSim") << adc << " (" << chargeColl[it] << ") ";
+    if (debug) {
+      edm::LogVerbatim("BTLElectronicsSim") << "Side " << iside << ": ADC = " << adc << " (" << charge[iside] << "), "
+                                            << "TDC1 = " << tdc_time1 << " (" << toa1[iside] << "), "
+                                            << "TDC2 = " << tdc_time2 << " (" << toa2[iside] << ")" << std::endl;
+    }
   }
 
   if (debug) {
