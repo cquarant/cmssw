@@ -99,7 +99,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     const int iBXL = std::floor(tL / bxTime_) + mtd_digitizer::kInTimeBX;
 
     // --- Right side
-    if (iBXR > 0 && iBXR < mtd_digitizer::kNumberOfBX) {
+    if (iBXR >= 0 && iBXR < mtd_digitizer::kNumberOfBX) {
       // Accumulate the energy of simHits in the same crystal
       (simHitIt->second).hit_info[0][iBXR] += Npe * (1. + lcepositionSlope_ * convertMmToCm(hit.localPosition().x()));
 
@@ -109,7 +109,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
     }
 
     // --- Left side
-    if (iBXL > 0 && iBXL < mtd_digitizer::kNumberOfBX) {
+    if (iBXL >= 0 && iBXL < mtd_digitizer::kNumberOfBX) {
       // Accumulate the energy of simHits in the same crystal
       (simHitIt->second).hit_info[2][iBXL] += Npe * (1. - lcepositionSlope_ * convertMmToCm(hit.localPosition().x()));
 

@@ -63,8 +63,6 @@ private:
   static constexpr float sqrt2_ = 1.41421356f;
   static constexpr float tofhirClock = 6.25f;
 
-  const bool debug_;
-
   const float bxTime_;
   const float lcepositionSlope_;
   const float sigmaLCEpositionSlope_;
@@ -108,6 +106,8 @@ private:
 
   const float scintillatorDecayTimeInv_;
   const float sigmaConst2_;
+
+  const bool debug_;
 };
 
 #endif

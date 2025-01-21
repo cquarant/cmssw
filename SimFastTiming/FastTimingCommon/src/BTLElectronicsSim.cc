@@ -1,3 +1,5 @@
+#define EDM_ML_DEBUG
+
 #include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSim.h"
 
 #include "FWCore/Framework/interface/ConsumesCollector.h"
@@ -11,8 +13,7 @@
 using namespace mtd;
 
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
-    : debug_(pset.getUntrackedParameter<bool>("debug", false)),
-      bxTime_(pset.getParameter<double>("bxTime")),
+    : bxTime_(pset.getParameter<double>("bxTime")),
       lcepositionSlope_(pset.getParameter<double>("LCEpositionSlope")),
       sigmaLCEpositionSlope_(pset.getParameter<double>("SigmaLCEpositionSlope")),
       pulseAmpThreshold_(pset.getParameter<double>("PulseAmpThreshold")),
@@ -48,7 +49,12 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       cosPhi_(0.5 * (sqrt(1. + corrCoeff_) + sqrt(1. - corrCoeff_))),
       sinPhi_(0.5 * corrCoeff_ / cosPhi_),
       scintillatorDecayTimeInv_(1. / scintillatorDecayTime_),
-      sigmaConst2_(sigmaTDC_ * sigmaTDC_ + sigmaClockGlobal_ * sigmaClockGlobal_) {
+      sigmaConst2_(sigmaTDC_ * sigmaTDC_ + sigmaClockGlobal_ * sigmaClockGlobal_),
+#ifdef EDM_ML_DEBUG
+      debug_(true) {
+#else
+      debug_(false) {
+#endif
 #ifdef EDM_ML_DEBUG
   float lightOutput = 4.4f * pset.getParameter<double>("LightOutput");  // average npe for 4.4 MeV
   float s1 = sigma_stochastic(lightOutput);
@@ -278,7 +284,7 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
 #endif
 
   if (debug) {
-    edm::LogVerbatim("BTLElectronicsSim") << "[runTrivialShaper]" << std::endl;
+    LogTrace("BTLElectronicsSim") << "[runTrivialShaper] DetId " << dataFrame.id().rawId() << std::endl;
   }
 
   // --- Digitize the hit charge and times
@@ -296,16 +302,16 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
     dataFrame.setSample(iside, newSample);
 
     if (debug) {
-      edm::LogVerbatim("BTLElectronicsSim") << "Side " << iside << ": ADC = " << adc << " (" << charge[iside] << "), "
-                                            << "TDC1 = " << tdc_time1 << " (" << toa1[iside] << "), "
-                                            << "TDC2 = " << tdc_time2 << " (" << toa2[iside] << ")" << std::endl;
+      LogTrace("BTLElectronicsSim") << "Side " << iside << ": ADC = " << adc << " (" << charge[iside] << "), "
+                                    << "TDC1 = " << tdc_time1 << " (" << toa1[iside] << "), "
+                                    << "TDC2 = " << tdc_time2 << " (" << toa2[iside] << ")" << std::endl;
     }
   }
 
   if (debug) {
     std::ostringstream msg;
     dataFrame.print(msg);
-    edm::LogVerbatim("BTLElectronicsSim") << msg.str() << std::endl;
+    LogTrace("BTLElectronicsSim") << msg.str() << std::endl;
   }
 }
 
