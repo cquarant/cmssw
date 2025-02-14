@@ -38,7 +38,7 @@ _barrel_MTDDigitizer = cms.PSet(
         ScintillatorDecayTime     = cms.double(40.),    # [ns]
         StocasticParam            = cms.vdouble(14.746531, 0.7), # (0.030[ns]*7000^0.7, 0.7)
         DarkCountRate             = cms.double(0.),     # [GHz]
-        DCRParam                  = cms.vdouble(18.864500, 0.7), # (0.034[ns]*6000/30^0.7, 0.7)
+        DCRParam                  = cms.vdouble(50.583684, 0.41), # (0.034[ns]*6000/30^0.41, 0.41)
         SigmaElectronicNoise      = cms.double(0.420),  # [uA]
         SlewRateParam             = cms.vdouble(1.3e9,-3.5,10.9e-9,14.7), # parameterization of slew rate vs Gain * npe
         SigmaTDC                  = cms.double(0.0133), # [ns]
@@ -52,7 +52,7 @@ _barrel_MTDDigitizer = cms.PSet(
         adcNbits                  = cms.uint32(10),     # number of ADC bits
         tdcNbits                  = cms.uint32(10),     # number of TDC bits
         adcThreshold_MIP          = cms.double(327),    # [ADC counts], average MIP energy
-        toaLSB_ns                 = cms.double(0.020)   # [ns], TDC time binning
+        tdcLSB_ns                 = cms.double(0.020)   # [ns], TDC binning in ns
         )
 
 

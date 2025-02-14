@@ -43,7 +43,7 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
       tdcNbits_(pset.getParameter<uint32_t>("tdcNbits")),
       adcBitSaturation_(std::pow(2, adcNbits_) - 1),
       adcThreshold_MIP_(pset.getParameter<double>("adcThreshold_MIP")),
-      toaLSB_ns_(pset.getParameter<double>("toaLSB_ns")),
+      tdcLSB_ns_(pset.getParameter<double>("tdcLSB_ns")),
       tdcBitSaturation_(std::pow(2, tdcNbits_) - 1),
       corrCoeff_(pset.getParameter<double>("CorrelationCoefficient")),
       cosPhi_(0.5 * (sqrt(1. + corrCoeff_) + sqrt(1. - corrCoeff_))),
@@ -123,7 +123,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       continue;
     }
 
-    float charge[2] = {0.f, 0.f};
+    float charge_adc[2] = {0.f, 0.f};
     float toa1[2] = {0.f, 0.f};
     float toa2[2] = {0.f, 0.f};
     std::array<float, 2> rearmingTime = {{0.f, 0.f}};
@@ -200,8 +200,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       }
 
       // --- Calculate the rearming time for this channel
-      float deadTime =
-          (channelRearmMode_ == 0 ? time_over_Thr1(npe[iside]) + t1Delay_ : channelRearmNClocks_ * tofhirClock);
+      float deadTime = (channelRearmMode_ == 0 ? time_over_Thr1(npe[iside]) : channelRearmNClocks_ * tofhirClock);
       rearmingTime[iside] = finalToA1 + deadTime;
 
       // --- Stochastich term
@@ -242,12 +241,12 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       // --- Get the pulse amplitude in ADC counts
       float amp = pulse_amp(npe[iside]);
 
-      // --- Get the relative uncertainty on the pulse amplitude
-      //     (here the unsmeared Npe is used, because the parameterization of the
-      //      amplitude resolution already includes the photostatistics fluctuation)
-      float amp_res = pulse_ampRes((it->second).hit_info[2 * iside][iBX]);
+      // --- Get the average uncertainty on the pulse amplitude (here the unsmeared
+      //     Npe is used, because the parameterization of the relative amplitude
+      //     resolution already includes the photostatistics fluctuation)
+      float sigma_amp = amp * pulse_ampRes((it->second).hit_info[2 * iside][iBX]);
 
-      charge[iside] = amp * (1. + amp_res);
+      charge_adc[iside] = CLHEP::RandGaussQ::shoot(hre, amp, sigma_amp);
 
     }  // iside loop
 
@@ -258,7 +257,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
     // --- Run the shaper to create a new data frame
     BTLDataFrame rawDataFrame(it->first.detid_);
-    runTrivialShaper(rawDataFrame, charge, toa1, toa2, it->first.row_, it->first.column_);
+    runTrivialShaper(rawDataFrame, charge_adc, toa1, toa2, it->first.row_, it->first.column_);
     updateOutput(output, rawDataFrame);
 
   }  // MTDSimHitDataAccumulator loop
@@ -271,7 +270,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
-                                         const float (&charge)[2],
+                                         const float (&charge_adc)[2],
                                          const float (&toa1)[2],
                                          const float (&toa2)[2],
                                          const uint8_t row,
@@ -279,7 +278,7 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
   bool debug = debug_;
 #ifdef EDM_ML_DEBUG
   for (int iside = 0; iside < dfSIZE; iside++) {
-    debug |= (charge[iside] > adcThreshold_MIP_);
+    debug |= (charge_adc[iside] > adcThreshold_MIP_);
   }
 #endif
 
@@ -293,20 +292,20 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
     newSample.set(false, false, 0, 0, 0, row, col);
 
     //brute force saturation, maybe could to better with an exponential like saturation
-    const uint32_t adc = std::min((uint32_t)std::floor(charge[iside]), adcBitSaturation_);
-    const uint32_t tdc_time1 = std::min((uint32_t)std::floor(toa1[iside] / toaLSB_ns_), tdcBitSaturation_);
-    const uint32_t tdc_time2 = std::min((uint32_t)std::floor(toa2[iside] / toaLSB_ns_), tdcBitSaturation_);
+    const uint32_t adc = std::min((uint32_t)std::floor(charge_adc[iside]), adcBitSaturation_);
+    const uint32_t tdc_time1 = std::min((uint32_t)std::floor(toa1[iside] / tdcLSB_ns_), tdcBitSaturation_);
+    const uint32_t tdc_time2 = std::min((uint32_t)std::floor(toa2[iside] / tdcLSB_ns_), tdcBitSaturation_);
 
     newSample.set(
-        charge[iside] > adcThreshold_MIP_, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
+        charge_adc[iside] > adcThreshold_MIP_, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
     dataFrame.setSample(iside, newSample);
 
     if (debug) {
-      LogTrace("BTLElectronicsSim") << "Side " << iside << ": ADC = " << adc << " (" << charge[iside] << "), "
+      LogTrace("BTLElectronicsSim") << "Side " << iside << ": ADC = " << adc << " (" << charge_adc[iside] << "), "
                                     << "TDC1 = " << tdc_time1 << " (" << toa1[iside] << "), "
                                     << "TDC2 = " << tdc_time2 << " (" << toa2[iside] << ")" << std::endl;
     }
-  }
+  }  // iside loop
 
   if (debug) {
     std::ostringstream msg;
