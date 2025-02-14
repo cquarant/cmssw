@@ -2,19 +2,17 @@ import FWCore.ParameterSet.Config as cms
 
 from SimFastTiming.FastTimingCommon.mtdDigitizer_cfi import mtdDigitizer
 
-
 _barrelAlgo = cms.PSet(
     algoName = cms.string("BTLUncalibRecHitAlgo"),
-    adcNbits = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.adcNbits,
-    adcSaturation = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.adcSaturation_MIP,
-    toaLSB_ns = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.toaLSB_ns,
-    timeResolutionInNs = cms.string("0.308*pow(x,-0.4175)"), # [ns]
-    timeCorr_p0 = cms.double( 2.21103),
-    timeCorr_p1 = cms.double(-0.933552),
-    timeCorr_p2 = cms.double( 0.),
-    c_LYSO = cms.double(13.846235)     # in unit cm/ns
+    invLightSpeedLYSO = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightCollectionSlope, # [cm/ns]
+    npeToADC = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.PulseAmpParam, # Npe to ADC counts conversion
+    npePerMeV = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput, # Npe/MeV
+    tdcLSB_ns = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.tdcLSB_ns, # TDC LSB in ns
+    timeResolutionInNs = cms.string("0.072468722*pow(x,-0.4175)"), # [ns]
+    timeCorr_p0 = cms.double( 2.70656),
+    timeCorr_p1 = cms.double(-0.609142),
+    timeCorr_p2 = cms.double( 0.277376)
 )
-
 
 _endcapAlgo = cms.PSet(
     algoName      = cms.string("ETLUncalibRecHitAlgo"),
@@ -28,7 +26,6 @@ _endcapAlgo = cms.PSet(
     timeCorr_p2 = cms.double(0.021455),
     timeCorr_p3 = cms.double(-0.000727429)
 )
-
 
 mtdUncalibratedRecHits = cms.EDProducer(
     "MTDUncalibratedRecHitProducer",
