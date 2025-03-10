@@ -16,8 +16,8 @@ _barrel_MTDDigitizer = cms.PSet(
     premixStage1MaxCharge = cms.double(1e6),
     DeviceSimulation = cms.PSet(
         _common_BTLparameters,
-        LightCollectionSlope      = cms.double(0.190),  # [ns/cm]
-        SigmaLightCollectionSlope = cms.double(0.009)   # [ns/cm] sigma of the light collection slope
+        LightCollectionSlope      = cms.double(0.095),  # [ns/cm]
+        SigmaLightCollectionSlope = cms.double(0.0045)  # [ns/cm] sigma of the light collection slope
         ),
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
