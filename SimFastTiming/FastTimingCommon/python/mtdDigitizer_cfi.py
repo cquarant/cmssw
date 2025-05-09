@@ -22,12 +22,12 @@ _barrel_MTDDigitizer = cms.PSet(
     ElectronicsSimulation = cms.PSet(
         _common_BTLparameters,
         SigmaLCEpositionSlope     = cms.double(0.018),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
-        PulseAmpThreshold         = cms.double(5.),     # [uA]
-        ChannelRearmMode          = cms.uint32(1),      # 0: the channel is rearmed on the falling edge of the trigger_B signal
-                                                        # 1: the channel is rearmed after ChannelRearmNClocks cycles of the TOFHiR clock
+        PulseAmpThreshold         = cms.double(20.32),  # [uA] this correspond to 1 MeV
+        ChannelRearmMode          = cms.uint32(2),      # 0: the channel rearming is switched off
+                                                        # 1: the channel is rearmed after the end-of-event signal
+                                                        # 2: the channel is rearmed after ChannelRearmNClocks cycles of the TOFHiR clock
         ChannelRearmNClocks       = cms.double(3.),     # number of TOFHiR clock cycles after which the channel is rearmed
         T1Delay                   = cms.double(0.),     # [ns]
-        SmearT1Delay              = cms.double(0.),     # [ns]
         SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
         PulseAmpAParam            = cms.vdouble(-1.3, 1.01e-8), # pulse amplitude in uA vs Gain * Npe
         TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
@@ -35,7 +35,7 @@ _barrel_MTDDigitizer = cms.PSet(
         TimeOverThr1Param         = cms.vdouble(1.4776e9,7.93403,-3.78578e-10,5.42505e-18,-2.27325e-27,-7.32799e-10,12.933), # time over the T1 threshold vs Gain * Npe
         SmearTimeForOOTtails      = cms.bool(True),     # switch to turn ON/OFF the uncertainty due to photons from OOT hits
         ScintillatorRiseTime      = cms.double(1.1),    # [ns]
-        ScintillatorDecayTime     = cms.double(40.),    # [ns]
+        ScintillatorDecayTime     = cms.double(42.8),   # [ns]
         StocasticParam            = cms.vdouble(14.746531, 0.7), # (0.030[ns]*7000^0.7, 0.7)
         DarkCountRate             = cms.double(0.),     # [GHz]
         DCRParam                  = cms.vdouble(50.583684, 0.41), # (0.034[ns]*6000/30^0.41, 0.41)

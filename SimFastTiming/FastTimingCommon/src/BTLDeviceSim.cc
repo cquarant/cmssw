@@ -105,7 +105,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
 
       // Store the time of the first SimHit in the i-th BX
       if ((simHitIt->second).hit_info[1][iBXR] == 0 || tR < (simHitIt->second).hit_info[1][iBXR])
-        (simHitIt->second).hit_info[1][iBXR] = tR - (iBXR - mtd_digitizer::kInTimeBX) * bxTime_;
+        (simHitIt->second).hit_info[1][iBXR] = tR;
     }
 
     // --- Left side
@@ -115,7 +115,7 @@ void BTLDeviceSim::getHitsResponse(const std::vector<std::tuple<int, uint32_t, f
 
       // Store the time of the first SimHit in the i-th BX
       if ((simHitIt->second).hit_info[3][iBXL] == 0 || tL < (simHitIt->second).hit_info[3][iBXL])
-        (simHitIt->second).hit_info[3][iBXL] = tL - (iBXL - mtd_digitizer::kInTimeBX) * bxTime_;
+        (simHitIt->second).hit_info[3][iBXL] = tL;
     }
 
   }  // hitRef loop

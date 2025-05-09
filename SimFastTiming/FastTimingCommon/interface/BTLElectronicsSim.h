@@ -40,7 +40,7 @@ public:
   static constexpr int dfSIZE = 2;
 
 private:
-  std::unordered_map<uint32_t, std::array<float, 2>>* channelRearmingTime_;
+  float rearming_time(const float& time, const float& npe) const;
 
   float pulse_amp_A(const float& npe) const;
 
@@ -61,7 +61,10 @@ private:
   float pulse_ampRes(const float& npe) const;
 
   static constexpr float sqrt2_ = 1.41421356f;
-  static constexpr float tofhirClock = 6.25f;
+  static constexpr float tofhirClock_ = 6.25f;
+
+  static constexpr uint32_t numberOfRUs_ = 432;
+  std::array<float, numberOfRUs_>* smearingClockRU_;
 
   const float bxTime_;
   const float lcepositionSlope_;
@@ -70,7 +73,6 @@ private:
   const uint32_t channelRearmMode_;
   const float channelRearmNClocks_;
   const float t1Delay_;
-  const float smearT1Delay_;
   const float sipmGain_;
   const std::vector<double> paramPulseAmpA_;
   const std::vector<double> paramThr1Rise_;

@@ -252,7 +252,7 @@ def ageMTD(process,lumi):
         1000: {
             "light_output": 1444.,
             "dark_count_rate": 12.,
-            "pulse_amp_threshold": 4.695,
+            "pulse_amp_threshold": 10.48,
             "sipm_gain": 417840.,
             "pulse_amp_a": [-1.1, 1.9e-8],
             "time_at_thr1rise": [3.1e5, -0.580],
@@ -264,7 +264,7 @@ def ageMTD(process,lumi):
         3000: {
             "light_output": 1004.,
             "dark_count_rate": 20.,
-            "pulse_amp_threshold": 4.695,
+            "pulse_amp_threshold": 4.95,
             "sipm_gain": 330990.,
             "pulse_amp_a": [-1.1, 1.9e-8],
             "time_at_thr1rise": [3.1e5, -0.580],
