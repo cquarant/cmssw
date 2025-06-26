@@ -1,0 +1,6 @@
+<lcgdict>
+   <class name="btldigi::BTLDigiSoALayout<>"/>
+   <class name="btldigi::BTLDigiHostCollection"/>
+   <class name="edm::Wrapper<btldigi::BTLDigiHostCollection>" splitLevel="0"/>
+
+</lcgdict>
