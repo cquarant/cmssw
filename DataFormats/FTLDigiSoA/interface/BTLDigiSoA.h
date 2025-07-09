@@ -5,11 +5,20 @@
 
 namespace btldigi {
     GENERATE_SOA_LAYOUT(BTLDigiSoALayout,
-                        SOA_COLUMN(uint32_t, rawId), // Raw ID of the module/TOFHIR
-                        SOA_COLUMN(uint16_t, flag),  // reserved+status+channel id
-                        SOA_COLUMN(uint32_t, BCcount), 
-                        SOA_COLUMN(uint32_t, data_0), // essentially a T1 and T2 coarse
-                        SOA_COLUMN(uint64_t, data_1)  // rest of TOFHIR Data word
+                        SOA_COLUMN(uint32_t, rawId    ), // Raw ID of the module/TOFHIR
+                        SOA_COLUMN(uint16_t, BC0count ),  // BC0 count (reserved)
+                        SOA_COLUMN(bool    , status   ),  // status of the TOFHIR
+                        SOA_COLUMN(uint8_t , chID     ), // TOFHIR channel ID
+                        SOA_COLUMN(uint32_t, BCcount  ), 
+                        SOA_COLUMN(uint16_t, T1coarse ),
+                        SOA_COLUMN(uint16_t, T2coarse ),  
+                        SOA_COLUMN(uint16_t, EOIcoarse),  
+                        SOA_COLUMN(uint16_t, Charge   ),  
+                        SOA_COLUMN(uint16_t, T1fine   ),  
+                        SOA_COLUMN(uint16_t, T2fine   ),  
+                        SOA_COLUMN(uint16_t, IdleTime ),  
+                        SOA_COLUMN(uint8_t , PrevTrigF),
+                        SOA_COLUMN(uint8_t , TACID    )
     )
 
     using BTLDigiSoA = BTLDigiSoALayout<>;
