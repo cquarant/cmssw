@@ -25,8 +25,6 @@
 
 #include "DataFormats/Math/interface/liblogintpack.h"
 
-#include "HeterogeneousCore/AlpakaInterface/interface/host.h"
-
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -249,22 +247,16 @@ namespace mtd_digitizer {
 
   template <class Traits>
   void MTDDigitizer<Traits>::finalizeEvent(edm::Event& e, edm::EventSetup const& c, CLHEP::HepRandomEngine* hre) {
-    if constexpr (std::is_same_v<Traits, BTLDigiHostCollection>) {
-      auto queue = cms::alpakatools::host();
-      auto digiCollection = std::make_unique<DigiCollection>(simHitAccumulator_.size(), queue);
+    if (premixStage1_) {
+      auto simResult = std::make_unique<PMTDSimAccumulator>();
+      saveSimHitAccumulator(*simResult, simHitAccumulator_, premixStage1MinCharge_, premixStage1MaxCharge_);
+      e.put(std::move(simResult), digiCollection_);
+    } else {
+      auto digiCollection = std::make_unique<DigiCollection>(simHitAccumulator_.size(), e.queue());
       electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
-      e.put(std::move(digiCollection), digiCollection_);      
-    } else if constexpr ((std::is_same_v<Traits, BTLDigiCollection>) || (std::is_same_v<Traits, ETLDigiCollection>)){
-      if (premixStage1_) {
-        auto simResult = std::make_unique<PMTDSimAccumulator>();
-        saveSimHitAccumulator(*simResult, simHitAccumulator_, premixStage1MinCharge_, premixStage1MaxCharge_);
-        e.put(std::move(simResult), digiCollection_);
-      } else {
-        auto digiCollection = std::make_unique<DigiCollection>();
-        electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
-        e.put(std::move(digiCollection), digiCollection_);
-      }
+      e.put(std::move(digiCollection), digiCollection_);
     }
+
     //release memory for next event
     resetSimHitDataAccumulator();
   }

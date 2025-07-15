@@ -5,6 +5,7 @@
 
 #include "SimFastTiming/FastTimingCommon/interface/BTLDeviceSim.h"
 #include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSim.h"
+#include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSimSoA.h"
 #include "SimFastTiming/FastTimingCommon/interface/ETLDeviceSim.h"
 #include "SimFastTiming/FastTimingCommon/interface/ETLElectronicsSim.h"
 
@@ -18,6 +19,19 @@ public:
 
   // --- The BTL electronics simulation
   typedef BTLElectronicsSim ElectronicsSim;
+
+};
+
+class BTLDigitizerTraitsSoA {
+public:
+  // --- The BTL DIGI collection
+  typedef btldigi::BTLDigiHostCollection DigiCollection;
+
+  // --- The BTL sensor response simulation for the bar geometry
+  typedef BTLDeviceSim DeviceSim;
+
+  // --- The BTL electronics simulation using BTL Digi in SoA format
+  typedef BTLElectronicsSimSoA ElectronicsSim;
 };
 
 class ETLDigitizerTraits {

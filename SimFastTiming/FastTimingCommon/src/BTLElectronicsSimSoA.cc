@@ -1,4 +1,4 @@
-#include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSim.h"
+#include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSimSoA.h"
 
 #include "FWCore/Framework/interface/ConsumesCollector.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
@@ -10,7 +10,7 @@
 
 using namespace mtd;
 
-BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
+BTLElectronicsSimSoA::BTLElectronicsSimSoA(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
     : debug_(pset.getUntrackedParameter<bool>("debug", false)),
       bxTime_(pset.getParameter<double>("bxTime")),
       testBeamMIPTimeRes_(pset.getParameter<double>("TestBeamMIPTimeRes")),
@@ -55,7 +55,7 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
   float s3 = std::sqrt(sigma2_electronics(lightOutput));
   float s4 = SinglePhotonTimeResolution_ / std::sqrt(TimeThreshold1_);
   float s5 = SigmaClock_;
-  LogDebug("BTLElectronicsSim") << " BTL time resolution model (ns, 1 SiPM), for an average light output of "
+  LogDebug("BTLElectronicsSimSoA") << " BTL time resolution model (ns, 1 SiPM), for an average light output of "
                                 << std::fixed << std::setw(14) << lightOutput << " N_pe:"
                                 << "\n sigma stochastic   = " << std::setw(14) << s1
                                 << "\n sigma DCR          = " << std::setw(14) << s2
@@ -67,11 +67,15 @@ BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::Consume
 #endif
 }
 
-void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
-                            BTLDigiCollection& output,
+void BTLElectronicsSimSoA::run(const mtd::MTDSimHitDataAccumulator& input,
+                            BTLDigiHostCollection& output,
                             CLHEP::HepRandomEngine* hre) const {
+  
   MTDSimHitData chargeColl, toa1, toa2;
 
+  BTLElectronicsMapping elMap = BTLElectronicsMapping(BTLDetId::CrysLayout::v4);
+
+  int i = 0;
   for (MTDSimHitDataAccumulator::const_iterator it = input.begin(); it != input.end(); it++) {
     // --- Digitize only the in-time bucket:
     const unsigned int iBX = mtd_digitizer::kInTimeBX;
@@ -176,21 +180,75 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
     }  // iside loop
 
-    edm::LogError("BTLElectronicsSimSoA") << "Processed hit with rawId: " << it->first.detid_
-              << ", toa1: " << toa1[0] << ", toa2: " << toa2[0]
-              << ", chargeColl[0]: " << chargeColl[0]
-              << ", toa1: " << toa1[1] << ", toa2: " << toa2[1]
-              << ", chargeColl[1]: " << chargeColl[1] << std::endl;
-              
-    //run the shaper to create a new data frame
-    BTLDataFrame rawDataFrame(it->first.detid_);
-    runTrivialShaper(rawDataFrame, chargeColl, toa1, toa2, it->first.row_, it->first.column_);
-    updateOutput(output, rawDataFrame);
+    // Convert into portions of a BTLDigiSoA
+    uint32_t rawId = it->first.detid_;
+    uint16_t BC0count = (uint16_t)iBX;
+    bool status = true; // status is always true in this implementation
+    uint32_t BCcount = 0; // BCcount is always 0 in this implementation
+    uint8_t chIDR = elMap.TOFHIRCh(rawId, it->first.row_, 0);
+    uint16_t T1coarseR = static_cast<uint16_t>(toa1[0]);
+    uint16_t T2coarseR = static_cast<uint16_t>(toa2[0]);
+    uint16_t EOIcoarseR = 0; // EOIcoarseR is not used in this implementation
+    uint16_t ChargeR = static_cast<uint16_t>(chargeColl[0]);
+    uint16_t T1fineR = static_cast<uint16_t>(0);
+    uint16_t T2fineR = static_cast<uint16_t>(0);
+    uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
+    uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
+    uint8_t TACIDR = 0; // TACIDR
 
+    uint8_t chIDL = elMap.TOFHIRCh(rawId, it->first.row_, 1);
+    uint16_t T1coarseL = static_cast<uint16_t>(toa1[1]);
+    uint16_t T2coarseL = static_cast<uint16_t>(toa2[1]);
+    uint16_t EOIcoarseL = 0; // EOIcoarseL is not used in this implementation
+    uint16_t ChargeL = static_cast<uint16_t>(chargeColl[1]);
+    uint16_t T1fineL = static_cast<uint16_t>(0);
+    uint16_t T2fineL = static_cast<uint16_t>(0);
+    uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
+    uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
+    uint8_t TACIDL = 0; // TACIDL is not used in this implementation 
+    
+    output.view()[i] = {
+            rawId,
+            BC0count,
+            status,
+            BCcount,
+            chIDR,
+            T1coarseR,
+            T2coarseR,
+            EOIcoarseR,
+            ChargeR,
+            T1fineR,
+            T2fineR,
+            IdleTimeR,
+            PrevTrigFR,
+            TACIDR,
+            chIDL,
+            T1coarseL,
+            T2coarseL,
+            EOIcoarseL,
+            ChargeL,
+            T1fineL,
+            T2fineL,
+            IdleTimeL,
+            PrevTrigFL,
+            TACIDL
+    };
+
+   
+    edm::LogError("BTLElectronicsSimSoA") << "Processed hit with rawId: " << rawId
+              << ", chIDR: " << (int)chIDR
+              << ", T1coarseR: " << T1coarseR
+              << ", ChargeR: " << ChargeR
+              << ", chIDL: " << (int)chIDL
+              << ", T1coarseL: " << T1coarseL
+              << ", ChargeL: " << ChargeL
+              << std::endl;
+
+    i++; // Increment the index for the next hit
   }  // MTDSimHitDataAccumulator loop
 }
 
-void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
+void BTLElectronicsSimSoA::runTrivialShaper(BTLDataFrame& dataFrame,
                                          const mtd::MTDSimHitData& chargeColl,
                                          const mtd::MTDSimHitData& toa1,
                                          const mtd::MTDSimHitData& toa2,
@@ -203,7 +261,7 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
 #endif
 
   if (debug)
-    edm::LogVerbatim("BTLElectronicsSim") << "[runTrivialShaper]" << std::endl;
+    edm::LogVerbatim("BTLElectronicsSimSoA") << "[runTrivialShaper]" << std::endl;
 
   //set new ADCs
   for (int it = 0; it < (int)(chargeColl.size()); it++) {
@@ -220,32 +278,32 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
     dataFrame.setSample(it, newSample);
 
     if (debug)
-      edm::LogVerbatim("BTLElectronicsSim") << adc << " (" << chargeColl[it] << "/" << adcLSB_MIP_ << ") ";
+      edm::LogVerbatim("BTLElectronicsSimSoA") << adc << " (" << chargeColl[it] << "/" << adcLSB_MIP_ << ") ";
   }
 
   if (debug) {
     std::ostringstream msg;
     dataFrame.print(msg);
-    edm::LogVerbatim("BTLElectronicsSim") << msg.str() << std::endl;
+    edm::LogVerbatim("BTLElectronicsSimSoA") << msg.str() << std::endl;
   }
 }
 
-void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame& rawDataFrame) const {
-  BTLDataFrame dataFrame(rawDataFrame.id());
-  dataFrame.resize(dfSIZE);
-  bool putInEvent(false);
-  for (int it = 0; it < dfSIZE; ++it) {
-    dataFrame.setSample(it, rawDataFrame[it]);
-    if (it == 0)
-      putInEvent = rawDataFrame[it].threshold();
-  }
+// void BTLElectronicsSimSoA::updateOutput(BTLDigiCollection& coll, const BTLDataFrame& rawDataFrame) const {
+//   BTLDataFrame dataFrame(rawDataFrame.id());
+//   dataFrame.resize(dfSIZE);
+//   bool putInEvent(false);
+//   for (int it = 0; it < dfSIZE; ++it) {
+//     dataFrame.setSample(it, rawDataFrame[it]);
+//     if (it == 0)
+//       putInEvent = rawDataFrame[it].threshold();
+//   }
 
-  if (putInEvent) {
-    coll.push_back(dataFrame);
-  }
-}
+//   if (putInEvent) {
+//     coll.push_back(dataFrame);
+//   }
+// }
 
-float BTLElectronicsSim::sigma2_pe(const float& Q, const float& R) const {
+float BTLElectronicsSimSoA::sigma2_pe(const float& Q, const float& R) const {
   float OneOverR = 1. / R;
   float OneOverR2 = OneOverR * OneOverR;
 
@@ -257,9 +315,9 @@ float BTLElectronicsSim::sigma2_pe(const float& Q, const float& R) const {
   return sigma2;
 }
 
-float BTLElectronicsSim::sigma_stochastic(const float& npe) const { return testBeamMIPTimeRes_ / std::sqrt(npe); }
+float BTLElectronicsSimSoA::sigma_stochastic(const float& npe) const { return testBeamMIPTimeRes_ / std::sqrt(npe); }
 
-float BTLElectronicsSim::sigma2_DCR(const float& npe) const {
+float BTLElectronicsSimSoA::sigma2_DCR(const float& npe) const {
   // trick to safely switch off the electronics contribution for resolution studies
 
   if (DCRxRiseTime_ == 0.) {
@@ -268,7 +326,7 @@ float BTLElectronicsSim::sigma2_DCR(const float& npe) const {
   return DCRxRiseTime_ * ScintillatorDecayTime2_ / npe / npe;
 }
 
-float BTLElectronicsSim::sigma2_electronics(const float npe) const {
+float BTLElectronicsSimSoA::sigma2_electronics(const float npe) const {
   // trick to safely switch off the electronics contribution for resolution studies
 
   if (SigmaElectronicNoise2_ == 0.) {
