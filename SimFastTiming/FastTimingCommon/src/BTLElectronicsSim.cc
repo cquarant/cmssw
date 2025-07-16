@@ -176,7 +176,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
     }  // iside loop
 
-    edm::LogError("BTLElectronicsSimSoA") << "Processed hit with rawId: " << it->first.detid_
+    edm::LogInfo("BTLElectronicsSim") << "Processed hit with rawId: " << it->first.detid_
               << ", toa1: " << toa1[0] << ", toa2: " << toa2[0]
               << ", chargeColl[0]: " << chargeColl[0]
               << ", toa1: " << toa1[1] << ", toa2: " << toa2[1]
