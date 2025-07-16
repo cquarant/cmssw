@@ -107,8 +107,8 @@ protected:
   // flag telling whether we are runing in premixing stage1
   const bool premixStage1_;
 
-  std::string name_;
 private:
+  std::string name_;
 };
 
 #include "FWCore/PluginManager/interface/PluginFactory.h"
