@@ -4,14 +4,12 @@ from SimFastTiming.FastTimingCommon.mtdDigitizer_cfi import mtdDigitizer
 
 _barrelAlgo = cms.PSet(
     algoName = cms.string("BTLUncalibRecHitAlgo"),
-    invLightSpeedLYSO = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightCollectionSlope, # [cm/ns]
-    npeToADC = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.PulseAmpParam, # Npe to ADC counts conversion
-    npePerMeV = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput, # Npe/MeV
-    tdcLSB_ns = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.tdcLSB_ns, # TDC LSB in ns
+    invLightSpeedLYSO = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightCollectionSlope, # [ns/cm]
+    npeToADC = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.PulseQParam, # Npe to ADC counts conversion
+    npePerMeV = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput, # [Npe/MeV]
+    tdcLSB_ns = cms.double(0.020), # [ns]
     timeResolutionInNs = cms.string("0.072468722*pow(x,-0.4175)"), # [ns]
-    timeCorr_p0 = cms.double( 2.70656),
-    timeCorr_p1 = cms.double(-0.609142),
-    timeCorr_p2 = cms.double( 0.277376)
+    timeWalkCorrection = cms.string("1.9e6/0.020*pow(9.389e5/0.0348*(x+22.5),-0.663)")
 )
 
 _endcapAlgo = cms.PSet(

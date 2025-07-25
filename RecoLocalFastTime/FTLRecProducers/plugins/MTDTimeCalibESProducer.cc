@@ -47,7 +47,7 @@ void MTDTimeCalibESProducer::fillDescriptions(edm::ConfigurationDescriptions& de
   desc.add<double>("BTLTimeOffset", 0.)->setComment("Time offset (additive) to all the BTL RecHits [ns]");
   desc.add<double>("ETLTimeOffset", 0.)->setComment("Time offset (additive) to all the ETL RecHits [ns]");
   desc.add<double>("BTLLightCollTime", 0.2)->setComment("Light collection time for BTL tile geometry [ns]");
-  desc.add<double>("BTLLightCollSlope", 0.075)
+  desc.add<double>("BTLLightCollSlope", 0.095)
       ->setComment("Light collection slope for bar for BTL bar tile geometry [ns/cm]");
   descriptions.add("MTDTimeCalibESProducer", desc);
 }
