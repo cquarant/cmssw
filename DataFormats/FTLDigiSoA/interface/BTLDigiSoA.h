@@ -34,5 +34,9 @@ namespace btldigi {
     using BTLDigiSoA = BTLDigiSoALayout<>;
     using BTLDigiSoAView = BTLDigiSoA::View;
     using BTLDigiSoAConstView = BTLDigiSoA::ConstView;
+
+    // std::ostream& operator<<(std::ostream& out, BTLDigiSoA::View::element const& digi);
+    std::ostream& operator<<(std::ostream& out, BTLDigiSoA::View::const_element const& digi);
+
 } // namespace btldigi
 #endif  // DataFormats_FTLDigi_interface_BTLDigiSoA_h
