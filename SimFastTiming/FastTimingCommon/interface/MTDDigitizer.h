@@ -249,17 +249,25 @@ namespace mtd_digitizer {
 
   template <class Traits>
   void MTDDigitizer<Traits>::finalizeEvent(edm::Event& e, edm::EventSetup const& c, CLHEP::HepRandomEngine* hre) {
-    if constexpr (std::is_same_v<Traits, BTLDigiHostCollection>) {
+
+    edm::LogError("MTDMix") << "MTDDigitizer::finalizeEvent: processing " << simHitAccumulator_.size()
+              << " hits in the accumulator" << std::endl;
+
+    if constexpr (std::is_same_v<Traits, BTLDigitizerTraitsSoA>) {
+      edm::LogError("MTDMix") << "use BTLDigiSoA" << std::endl;
+
       auto queue = cms::alpakatools::host();
       auto digiCollection = std::make_unique<DigiCollection>(simHitAccumulator_.size(), queue);
       electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
       e.put(std::move(digiCollection), digiCollection_);      
-    } else if constexpr ((std::is_same_v<Traits, BTLDigiCollection>) || (std::is_same_v<Traits, ETLDigiCollection>)){
+    } else if constexpr ((std::is_same_v<Traits, BTLDigitizerTraits>) || (std::is_same_v<Traits, ETLDigitizerTraits>)){
       if (premixStage1_) {
+        edm::LogError("MTDMix") << "use BTLDigi" << std::endl;
         auto simResult = std::make_unique<PMTDSimAccumulator>();
         saveSimHitAccumulator(*simResult, simHitAccumulator_, premixStage1MinCharge_, premixStage1MaxCharge_);
         e.put(std::move(simResult), digiCollection_);
       } else {
+        edm::LogError("MTDMix") << "use BTLDigi" << std::endl;
         auto digiCollection = std::make_unique<DigiCollection>();
         electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
         e.put(std::move(digiCollection), digiCollection_);
