@@ -43,30 +43,38 @@ public:
   BTLElectronicsMapping(const BTLDetId::CrysLayout lay);
 
   // Get SiPM Channel number from crystal
-  int SiPMCh(uint32_t smodCopy, uint32_t crystal, uint32_t SiPMSide);
+  int SiPMCh(bool smodCopy, uint32_t crystal, uint32_t SiPMSide);
   int SiPMCh(BTLDetId det, uint32_t SiPMSide);
+  int SiPMCh(BTLDetId det, uint32_t crystal, uint32_t SiPMSide); // to be used if det is a BTLDetId of SModule
   int SiPMCh(uint32_t rawID, uint32_t SiPMSide);
+  int SiPMCh(uint32_t rawID, uint32_t crystal,uint32_t SiPMSide); // to be used if rawID is a rawId of SModule
 
-  SiPMChPair GetSiPMChPair(uint32_t smodCopy, uint32_t crystal);
+  SiPMChPair GetSiPMChPair(bool smodCopy, uint32_t crystal);
   SiPMChPair GetSiPMChPair(BTLDetId det);
+  SiPMChPair GetSiPMChPair(BTLDetId det, uint32_t crystal); // to be used if det is a BTLDetId of SModule
   SiPMChPair GetSiPMChPair(uint32_t rawID);
+  SiPMChPair GetSiPMChPair(uint32_t rawID, uint32_t crystal); // to be used if rawID is a rawId of SModule
 
   // Get TOFHIR Channel number from crystal
-  int TOFHIRCh(uint32_t smodCopy, uint32_t crystal, uint32_t SiPMSide);
+  int TOFHIRCh(bool smodCopy, uint32_t crystal, uint32_t SiPMSide);
   int TOFHIRCh(BTLDetId det, uint32_t SiPMSide);
+  int TOFHIRCh(BTLDetId det, uint32_t crystal, uint32_t SiPMSide); // to be used if det is a BTLDetId of SModule
   int TOFHIRCh(uint32_t rawID, uint32_t SiPMSide);
+  int TOFHIRCh(uint32_t rawID, uint32_t crystal, uint32_t SiPMSide); // to be used if rawID is a rawId of SModule
 
-  TOFHIRChPair GetTOFHIRChPair(uint32_t smodCopy, uint32_t crystal);
+  TOFHIRChPair GetTOFHIRChPair(bool smodCopy, uint32_t crystal);
   TOFHIRChPair GetTOFHIRChPair(BTLDetId det);
+  TOFHIRChPair GetTOFHIRChPair(BTLDetId det, uint32_t crystal); // to be used if det is a BTLDetId of SModule
   TOFHIRChPair GetTOFHIRChPair(uint32_t rawID);
+  TOFHIRChPair GetTOFHIRChPair(uint32_t rawID, uint32_t crystal); // to be used if rawID is a rawId of SModule
 
   // Get xtal from TOFHIR Channel number
-  int THChToXtal(uint32_t smodCopy, uint32_t THCh);
+  int THChToXtal(bool smodCopy, uint32_t THCh);
   BTLDetId THChToBTLDetId(
-      uint32_t zside, uint32_t rod, uint32_t runit, uint32_t dmodule, uint32_t smodCopy, uint32_t THCh);
+      uint32_t zside, uint32_t rod, uint32_t runit, uint32_t dmodule, uint32_t smodule, uint32_t THCh);
 
   /** Returns TOFHIR ASIC number in construction database. */
-  int TOFHIRASIC(uint32_t dmodule, uint32_t smodCopy);
+  int TOFHIRASIC(uint32_t dmodule, uint32_t smodule);
   int TOFHIRASIC(BTLDetId det);
   int TOFHIRASIC(uint32_t rawID);
 
