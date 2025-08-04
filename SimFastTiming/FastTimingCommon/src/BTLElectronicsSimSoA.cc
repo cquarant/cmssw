@@ -185,24 +185,24 @@ void BTLElectronicsSimSoA::run(const mtd::MTDSimHitDataAccumulator& input,
     uint16_t BC0count = (uint16_t)iBX;
     bool status = true; // status is always true in this implementation
     uint32_t BCcount = 0; // BCcount is always 0 in this implementation
-    uint8_t chIDR = elMap.TOFHIRCh(rawId, it->first.row_, 0);
-    uint16_t T1coarseR = static_cast<uint16_t>(toa1[0]);
-    uint16_t T2coarseR = static_cast<uint16_t>(toa2[0]);
+    uint8_t chIDR = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)0));
+    uint16_t T1coarseR = timetoTcoarse(toa1[0], T1coarseMask);
+    uint16_t T2coarseR = timetoTcoarse(toa2[0], T2coarseMask);
     uint16_t EOIcoarseR = 0; // EOIcoarseR is not used in this implementation
-    uint16_t ChargeR = static_cast<uint16_t>(chargeColl[0]);
-    uint16_t T1fineR = static_cast<uint16_t>(0);
-    uint16_t T2fineR = static_cast<uint16_t>(0);
+    uint16_t ChargeR = chargetoQfine(chargeColl[0], toa1[0], toa2[0]);
+    uint16_t T1fineR = timetoTfine(toa1[0]);
+    uint16_t T2fineR = timetoTfine(toa2[0]);
     uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
     uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
     uint8_t TACIDR = 0; // TACIDR
 
-    uint8_t chIDL = elMap.TOFHIRCh(rawId, it->first.row_, 1);
-    uint16_t T1coarseL = static_cast<uint16_t>(toa1[1]);
-    uint16_t T2coarseL = static_cast<uint16_t>(toa2[1]);
+    uint8_t chIDL = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)1));
+    uint16_t T1coarseL = timetoTcoarse(toa1[1], T1coarseMask);
+    uint16_t T2coarseL = timetoTcoarse(toa2[1], T2coarseMask);
     uint16_t EOIcoarseL = 0; // EOIcoarseL is not used in this implementation
-    uint16_t ChargeL = static_cast<uint16_t>(chargeColl[1]);
-    uint16_t T1fineL = static_cast<uint16_t>(0);
-    uint16_t T2fineL = static_cast<uint16_t>(0);
+    uint16_t ChargeL = chargetoQfine(chargeColl[1], toa1[1], toa2[1]);
+    uint16_t T1fineL = timetoTfine(toa1[1]);
+    uint16_t T2fineL = timetoTfine(toa2[1]);
     uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
     uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
     uint8_t TACIDL = 0; // TACIDL is not used in this implementation 
@@ -234,16 +234,38 @@ void BTLElectronicsSimSoA::run(const mtd::MTDSimHitDataAccumulator& input,
             TACIDL
     };
 
-   
-    edm::LogError("BTLElectronicsSimSoA") << "Processed hit with rawId: " << rawId
-              << ", chIDR: " << (int)chIDR
-              << ", T1coarseR: " << T1coarseR
-              << ", ChargeR: " << ChargeR
-              << ", chIDL: " << (int)chIDL
-              << ", T1coarseL: " << T1coarseL
-              << ", ChargeL: " << ChargeL
-              << std::endl;
+    if (debug_) {
+    
+      edm::LogError("BTLElectronicsSimSoA") << "Input hit with rawId    : " << rawId
+                << ", row: " << (int)it->first.row_
+                << ", column: " << (int)it->first.column_
+                << ", chIDR: " << (int)chIDR
+                << ", time1R: " << toa1[0]
+                << ", time2R: " << toa2[0]
+                << ", chargeR: " << chargeColl[0]
+                << ", chIDL: " << (int)chIDL
+                << ", time1L: " << toa1[1]
+                << ", time2L: " << toa2[1]
+                << ", chargeL: " << chargeColl[1]
+                << std::endl;
 
+      // auto cell = output.view()[i]; // cell è di tipo element
+      // edm::LogError("BTLElectronicsSimSoA") << static_cast<BTLDigiSoA::View::const_element>(cell);
+      edm::LogError("BTLElectronicsSimSoA") << "Processed hit with rawId: " << rawId
+                << ", chIDR: "     << (int)output.view()[i].chIDR() 
+                << ", T1coarseR: " << (int)output.view()[i].T1coarseR()
+                << ", T1fineR: "   << output.view()[i].T1fineR()
+                << ", T2coarseR: " << output.view()[i].T2coarseR()
+                << ", T2fineR: "   << output.view()[i].T2fineR()
+                << ", ChargeR: "   << output.view()[i].ChargeR()
+                << ", chIDL: "     << (int)output.view()[i].chIDL()
+                << ", T1coarseL: " << output.view()[i].T1coarseL()
+                << ", T1fineL: "   << output.view()[i].T1fineL()
+                << ", T2coarseL: " << output.view()[i].T2coarseL()
+                << ", T2fineL: "   << output.view()[i].T2fineL()
+                << ", ChargeL: "   << output.view()[i].ChargeL()
+                << std::endl;
+    }
     i++; // Increment the index for the next hit
   }  // MTDSimHitDataAccumulator loop
 }
@@ -333,4 +355,57 @@ float BTLElectronicsSimSoA::sigma2_electronics(const float npe) const {
     return 0.;
   }
   return SigmaElectronicNoise2_ * ScintillatorDecayTime2_ / npe / npe;
+}
+
+uint16_t BTLElectronicsSimSoA::timetoTcoarse(const float time, const uint16_t mask) const {
+  // Convert time to Tcoarse
+  uint16_t tcoarse = static_cast<uint16_t>(std::floor((time) / T_clk)) & mask; // Mask to keep only the lower 15 bits
+  return tcoarse; // by design, Tcoarse is at least 1 clk cycle after the arrival of the signal
+}
+
+uint16_t BTLElectronicsSimSoA::timetoTfine(const float time) const {
+  // Convert time to Tfine
+  float time_clk_units = time / T_clk; // Convert time to clock units
+  float qtfine =  std::floor(time_clk_units + 1) - time_clk_units - t0_; // Get the fine time part in clock units
+  uint16_t Tfine = static_cast<uint16_t>(std::floor(a2_ * qtfine * qtfine + a1_ * qtfine + a0_)); // convert into Tfine digits
+
+
+  // float qtfine_reverted = T_clk * (-a1_ + std::sqrt(a1_ * a1_ - 4.0 * (a0_ - qtfine) * a2_)) / (2.0 * a2_);
+  // printf("time: %f, time_clk_units: %f\n", time, time_clk_units);
+  // printf("timeFine: %f, qtfine: %u\n", timeFine, qtfine);
+  // printf("qtfine reverted: %f\n", qtfine_reverted);
+
+  if (Tfine > tdcBitSaturation_) {
+    edm::LogWarning("BTLElectronicsSimSoA") << "BTLElectronicsSimSoA::timetoTfine: Tfine value " << Tfine
+                                             << " exceeds the maximum allowed value of " << tdcBitSaturation_
+                                             << ". Setting Tfine to the maximum allowed value.";
+    Tfine = tdcBitSaturation_; // Ensure Tfine does not exceed the maximum allowed value
+  }
+
+  return Tfine;
+}
+
+uint16_t BTLElectronicsSimSoA::chargetoQfine(const float charge, const float time1, const float time2) const {
+  // Convert charge to qfine
+  float ti = (time2 - time1) / T_clk; // Time of signal integration in clock units
+
+  // evaluate pedestal (qdc calibs)
+  uint32_t pedestal = (
+            p0_
+            + p1_ * ti
+            + p2_ * ti * ti
+            + p3_ * ti * ti * ti
+            + p4_ * ti * ti * ti * ti
+            + p5_ * ti * ti * ti * ti * ti
+            + p6_ * ti * ti * ti * ti * ti * ti
+            + p7_ * ti * ti * ti * ti * ti * ti * ti
+            + p8_ * ti * ti * ti * ti * ti * ti * ti * ti
+            + p9_ * ti * ti * ti * ti * ti * ti * ti * ti * ti
+        );
+
+  const uint32_t adc = std::min((uint32_t)std::floor(charge / adcLSB_MIP_), adcBitSaturation_);
+  uint16_t Qfine = adc + pedestal; // Qfine is the ADC value + pedestal
+
+  // printf  ("charge: %f, ti: %f, pedestal: %u, adc: %u, Qfine: %u\n", charge, ti, pedestal, adc, Qfine);
+  return Qfine;
 }

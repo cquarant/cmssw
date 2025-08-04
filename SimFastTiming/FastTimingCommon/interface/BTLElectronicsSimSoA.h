@@ -43,7 +43,13 @@ public:
   // void updateOutput(BTLDigiCollection& coll, const BTLDataFrame& rawDataFrame) const;
 
   static constexpr int dfSIZE = 2;
+  // static constexpr float T_clk = 6250; // ps, TOFHIR clock period
+  static constexpr float T_clk = 6.250; // ns, TOFHIR clock period
 
+  static constexpr uint16_t T1coarseMask = 0x7FFF; // 15 bits for T1 coarse time
+  static constexpr uint16_t T2coarseMask = 0x2FF; // 10 bits for T2 coarse time
+  static constexpr uint16_t TfineShift = 5;   // 10 bits for fine time
+  
 private:
   float sigma2_pe(const float& Q, const float& R) const;
 
@@ -52,6 +58,10 @@ private:
   float sigma2_DCR(const float& npe) const;
 
   float sigma2_electronics(const float npe) const;
+
+  uint16_t timetoTcoarse(float time, const uint16_t mask) const;
+  uint16_t timetoTfine(float time) const;
+  uint16_t chargetoQfine(float charge, float time1, float time2) const;
 
   const bool debug_;
 
@@ -99,6 +109,27 @@ private:
   const float SigmaClock2_;
 
   const BTLPulseShape btlPulseShape_;
+
+  // tdc calibration parameters 
+  // (to be modified: these parameters are evaluated by channel and stored in parquet files)
+  static constexpr float a0_ = 57.244545; 
+  static constexpr float a1_ = 511.27832; 
+  static constexpr float a2_ = -7.8838577;
+  static constexpr float t0_ = -0.048343264; 
+
+  // qdc calibration parameters 
+  // (to be modified: these parameters are evaluated by channel and stored in parquet files)
+  static constexpr float p0_ = 49.542229; 
+  static constexpr float p1_ = -0.323424;
+  static constexpr float p2_ = 0.062578;
+  static constexpr float p3_ = -0.002484;
+  static constexpr float p4_ = 0.0;
+  static constexpr float p5_ = 0.0;
+  static constexpr float p6_ = 0.0;
+  static constexpr float p7_ = 0.0;
+  static constexpr float p8_ = 0.0;
+  static constexpr float p9_ = 0.0;
+
 };
 
 #endif
