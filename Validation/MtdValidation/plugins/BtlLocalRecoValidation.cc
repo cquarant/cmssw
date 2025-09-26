@@ -399,7 +399,8 @@ void BtlLocalRecoValidation::analyze(const edm::Event& iEvent, const edm::EventS
     const auto& global_point = thedet->toGlobal(local_point);
 
     meHitEnergy_->Fill(recHit.energy());
-    meHitEnergyRUSlice_[detId.runit() - 1]->Fill(recHit.energy());
+    const int iRU = (detId.rawId() & BTLDetId::kBTLNewFormat ? detId.runit() : detId.runit() - 1);
+    meHitEnergyRUSlice_[iRU]->Fill(recHit.energy());
     meHitLogEnergy_->Fill(log10(recHit.energy()));
     meHitTime_->Fill(recHit.time());
     meHitTimeError_->Fill(recHit.timeError());
