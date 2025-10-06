@@ -5,7 +5,6 @@
 
 #include "SimFastTiming/FastTimingCommon/interface/BTLDeviceSim.h"
 #include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSim.h"
-#include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSimSoA.h"
 #include "SimFastTiming/FastTimingCommon/interface/ETLDeviceSim.h"
 #include "SimFastTiming/FastTimingCommon/interface/ETLElectronicsSim.h"
 
@@ -31,7 +30,7 @@ public:
   typedef BTLDeviceSim DeviceSim;
 
   // --- The BTL electronics simulation using BTL Digi in SoA format
-  typedef BTLElectronicsSimSoA ElectronicsSim;
+  typedef BTLElectronicsSim ElectronicsSim;
 };
 
 class ETLDigitizerTraits {

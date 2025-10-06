@@ -1,6 +1,6 @@
 import FWCore.ParameterSet.Config as cms
 
-process = cms.Process("MTDDigiDump")
+process = cms.Process("MTDDigiDumpSoA")
 
 process.load("FWCore.MessageService.MessageLogger_cfi")
 
@@ -12,7 +12,7 @@ process.source = cms.Source("PoolSource",
     )
 )
 
-process.MTDDigiDump = cms.EDAnalyzer('MTDDigiDump')
+process.MTDDigiDump = cms.EDAnalyzer('MTDDigiDumpSoA')
 
 
 process.p = cms.Path(process.MTDDigiDump)

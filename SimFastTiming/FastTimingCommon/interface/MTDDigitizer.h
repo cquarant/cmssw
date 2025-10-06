@@ -253,21 +253,20 @@ namespace mtd_digitizer {
     edm::LogError("MTDMix") << "MTDDigitizer::finalizeEvent: processing " << simHitAccumulator_.size()
               << " hits in the accumulator" << std::endl;
 
+    // Compiler instruction to save BTL digis in SoA format along with the legacy format
+    // for ETL digis, only the legacy format is supported
     if constexpr (std::is_same_v<Traits, BTLDigitizerTraitsSoA>) {
-      edm::LogError("MTDMix") << "use BTLDigiSoA" << std::endl;
-
       auto queue = cms::alpakatools::host();
       auto digiCollection = std::make_unique<DigiCollection>(simHitAccumulator_.size(), queue);
       electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
       e.put(std::move(digiCollection), digiCollection_);      
     } else if constexpr ((std::is_same_v<Traits, BTLDigitizerTraits>) || (std::is_same_v<Traits, ETLDigitizerTraits>)){
       if (premixStage1_) {
-        edm::LogError("MTDMix") << "use BTLDigi" << std::endl;
+
         auto simResult = std::make_unique<PMTDSimAccumulator>();
         saveSimHitAccumulator(*simResult, simHitAccumulator_, premixStage1MinCharge_, premixStage1MaxCharge_);
         e.put(std::move(simResult), digiCollection_);
       } else {
-        edm::LogError("MTDMix") << "use BTLDigi" << std::endl;
         auto digiCollection = std::make_unique<DigiCollection>();
         electronicsSim_.run(simHitAccumulator_, *digiCollection, hre);
         e.put(std::move(digiCollection), digiCollection_);

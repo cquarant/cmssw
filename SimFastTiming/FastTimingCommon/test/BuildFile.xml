@@ -6,5 +6,8 @@
 <library file="MTDDigiDump.cc" name="MTDDigiDump">
   <flags EDM_PLUGIN="1"/>
 </library>
+<library file="MTDDigiDumpSoA.cc" name="MTDDigiDumpSoA">
+  <flags EDM_PLUGIN="1"/>
+</library>
 <bin file="testBTLShape.cpp">
 </bin>

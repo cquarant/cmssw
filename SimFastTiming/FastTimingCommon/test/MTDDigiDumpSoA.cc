@@ -94,27 +94,27 @@ void MTDDigiDumpSoA::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
     for(int i=0; i<h_BTL_digi_SoA->view().metadata().size(); i++){
 
       std::cout << "SoA row" << i << ", rawId : " << h_BTL_digi_SoA->view()[i].rawId() << "\n"
-        << ", BC0count: " << h_BTL_digi_SoA->view()[i].BC0count() << "\n"
-        << ", status: " << h_BTL_digi_SoA->view()[i].status() << "\n"
-        << ", BCcount: " << h_BTL_digi_SoA->view()[i].BCcount() << "\n"
-        << ", chIDR: " << (int)h_BTL_digi_SoA->view()[i].chIDR() << "\n"
-        << ", T1coarseR: " << h_BTL_digi_SoA->view()[i].T1coarseR() << "\n"
-        << ", T1fineR: " << h_BTL_digi_SoA->view()[i].T1fineR() << "\n"
-        << ", T2coarseR: " << h_BTL_digi_SoA->view()[i].T2coarseR() << "\n"
-        << ", T2fineR: " << h_BTL_digi_SoA->view()[i].T2fineR() << "\n"
-        << ", ChargeR: " << h_BTL_digi_SoA->view()[i].ChargeR() << "\n"
-        << ", chIDL: " << (int)h_BTL_digi_SoA->view()[i].chIDL() << "\n"
-        << ", T1coarseL: " << h_BTL_digi_SoA->view()[i].T1coarseL() << "\n"
-        << ", T1fineL: " << h_BTL_digi_SoA->view()[i].T1fineL() << "\n"
-        << ", T2coarseL: " << h_BTL_digi_SoA->view()[i].T2coarseL() << "\n"
-        << ", T2fineL: " << h_BTL_digi_SoA->view()[i].T2fineL() << "\n"
-        << ", ChargeL: " << h_BTL_digi_SoA->view()[i].ChargeL() << "\n"
-        << ", IdleTimeR: " << h_BTL_digi_SoA->view()[i].IdleTimeR() << "\n"
-        << ", PrevTrigFR: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFR() << "\n"
-        << ", TACIDR: " << (int)h_BTL_digi_SoA->view()[i].TACIDR() << "\n"
-        << ", IdleTimeL: " << h_BTL_digi_SoA->view()[i].IdleTimeL() << "\n"
-        << ", PrevTrigFL: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFL() << "\n"
-        << ", TACIDL: " << (int)h_BTL_digi_SoA->view()[i].TACIDL() << std::endl;
+        << " BC0count(evt number): " << h_BTL_digi_SoA->view()[i].BC0count() << "\n"
+        // << " status: " << h_BTL_digi_SoA->view()[i].status() << "\n"
+        // << " BCcount: " << h_BTL_digi_SoA->view()[i].BCcount() << "\n"
+        << " chIDR: " << (int)h_BTL_digi_SoA->view()[i].chIDR() << "\n"
+        << " T1coarseR: " << h_BTL_digi_SoA->view()[i].T1coarseR() << "\n"
+        << " T1fineR: " << h_BTL_digi_SoA->view()[i].T1fineR() << "\n"
+        << " T2coarseR: " << h_BTL_digi_SoA->view()[i].T2coarseR() << "\n"
+        << " T2fineR: " << h_BTL_digi_SoA->view()[i].T2fineR() << "\n"
+        << " qfineR: " << h_BTL_digi_SoA->view()[i].ChargeR() << "\n"
+        << " chIDL: " << (int)h_BTL_digi_SoA->view()[i].chIDL() << "\n"
+        << " T1coarseL: " << h_BTL_digi_SoA->view()[i].T1coarseL() << "\n"
+        << " T1fineL: " << h_BTL_digi_SoA->view()[i].T1fineL() << "\n"
+        << " T2coarseL: " << h_BTL_digi_SoA->view()[i].T2coarseL() << "\n"
+        << " T2fineL: " << h_BTL_digi_SoA->view()[i].T2fineL() << "\n"
+        << " qfineL: " << h_BTL_digi_SoA->view()[i].ChargeL() << "\n" << std::endl;
+        // << " IdleTimeR: " << h_BTL_digi_SoA->view()[i].IdleTimeR() << "\n"
+        // << " PrevTrigFR: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFR() << "\n"
+        // << " TACIDR: " << (int)h_BTL_digi_SoA->view()[i].TACIDR() << "\n"
+        // << " IdleTimeL: " << h_BTL_digi_SoA->view()[i].IdleTimeL() << "\n"
+        // << " PrevTrigFL: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFL() << "\n"
+        // << " TACIDL: " << (int)h_BTL_digi_SoA->view()[i].TACIDL() << std::endl;
 
     }
     // for (const auto& dataFrame : *h_BTL_digi) {

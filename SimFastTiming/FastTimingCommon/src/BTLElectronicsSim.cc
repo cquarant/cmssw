@@ -11,7 +11,7 @@
 using namespace mtd;
 
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
-    : debug_(pset.getUntrackedParameter<bool>("debug", false)),
+    : debug_(pset.getUntrackedParameter<bool>("debug", true)),
       bxTime_(pset.getParameter<double>("bxTime")),
       testBeamMIPTimeRes_(pset.getParameter<double>("TestBeamMIPTimeRes")),
       ScintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
@@ -190,6 +190,215 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
   }  // MTDSimHitDataAccumulator loop
 }
 
+void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
+                            btldigi::BTLDigiHostCollection& output,
+                            CLHEP::HepRandomEngine* hre) const {
+  
+  MTDSimHitData chargeColl, toa1, toa2;
+
+  BTLElectronicsMapping elMap = BTLElectronicsMapping(BTLDetId::CrysLayout::v4);
+
+  int i = 0;
+  for (MTDSimHitDataAccumulator::const_iterator it = input.begin(); it != input.end(); it++) {
+    // --- Digitize only the in-time bucket:
+    const unsigned int iBX = mtd_digitizer::kInTimeBX;
+
+    chargeColl.fill(0.f);
+    toa1.fill(0.f);
+    toa2.fill(0.f);
+    for (size_t iside = 0; iside < 2; iside++) {
+      // --- Fluctuate the total number of photo-electrons
+      float npe = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2 * iside][iBX]);
+      if (npe < EnergyThreshold_)
+        continue;
+
+      // --- Get the time of arrival and add a channel time offset
+      float finalToA1 = (it->second).hit_info[1 + 2 * iside][iBX] + ChannelTimeOffset_;
+
+      if (smearChannelTimeOffset_ > 0.) {
+        float timeSmearing = CLHEP::RandGaussQ::shoot(hre, 0., smearChannelTimeOffset_);
+        finalToA1 += timeSmearing;
+      }
+
+      // --- Calculate and add the time walk: the time of arrival is read in correspondence
+      //                                      with two thresholds on the signal pulse
+      std::array<float, 3> times =
+          btlPulseShape_.timeAtThr(npe / ReferencePulseNpe_, TimeThreshold1_ * Npe_to_V_, TimeThreshold2_ * Npe_to_V_);
+
+      // --- If the pulse amplitude is smaller than TimeThreshold2, the trigger does not fire
+      if (times[1] == 0.)
+        continue;
+
+      float finalToA2 = finalToA1 + times[1];
+      finalToA1 += times[0];
+
+      // --- Estimate the time uncertainty due to photons from earlier OOT hits in the current BTL cell
+      if (smearTimeForOOTtails_) {
+        float rate_oot = 0.;
+        // Loop on earlier OOT hits
+        for (int ibx = 0; ibx < mtd_digitizer::kInTimeBX; ++ibx) {
+          if ((it->second).hit_info[2 * iside][ibx] > 0.) {
+            float hit_time = (it->second).hit_info[1 + 2 * iside][ibx] + bxTime_ * (ibx - mtd_digitizer::kInTimeBX);
+            float npe_oot = CLHEP::RandPoissonQ::shoot(hre, (it->second).hit_info[2 * iside][ibx]);
+            rate_oot += npe_oot * exp(hit_time * ScintillatorDecayTimeInv_) * ScintillatorDecayTimeInv_;
+          }
+        }  // ibx loop
+
+        if (rate_oot > 0.) {
+          float sigma_oot = sqrt(rate_oot * ScintillatorRiseTime_) * ScintillatorDecayTime_ / npe;
+          float smearing_oot = CLHEP::RandGaussQ::shoot(hre, 0., sigma_oot);
+          finalToA1 += smearing_oot;
+          finalToA2 += smearing_oot;
+        }
+      }  // if smearTimeForOOTtails_
+
+      // --- Uncertainty due to the fluctuations of the n-th photon arrival time:
+      if (testBeamMIPTimeRes_ > 0.) {
+        // In this case the time resolution is parametrized from the testbeam.
+        // The same parameterization is used for both thresholds.
+        float sigma = sigma_stochastic(npe);
+        float smearing_stat_thr1 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
+        float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(hre, 0., sigma);
+
+        finalToA1 += smearing_stat_thr1;
+        finalToA2 += smearing_stat_thr2;
+
+      } else {
+        // In this case the time resolution is taken from the literature.
+        // The fluctuations due to the first TimeThreshold1_ p.e. are common to both times
+        float smearing_stat_thr1 =
+            CLHEP::RandGaussQ::shoot(hre, 0., ScintillatorDecayTime_ * sqrt(sigma2_pe(TimeThreshold1_, npe)));
+        float smearing_stat_thr2 = CLHEP::RandGaussQ::shoot(
+            hre, 0., ScintillatorDecayTime_ * sqrt(sigma2_pe(TimeThreshold2_ - TimeThreshold1_, npe)));
+        finalToA1 += smearing_stat_thr1;
+        finalToA2 += smearing_stat_thr1 + smearing_stat_thr2;
+      }
+
+      // --- Add in quadrature the uncertainties due to the SiPM timing resolution, the SiPM DCR,
+      //     the electronic noise and the clock distribution:
+      float sigma2_tot_thr1 = SPTR2_ / TimeThreshold1_ + sigma2_DCR(npe) + sigma2_electronics(npe) + SigmaClock2_;
+      float sigma2_tot_thr2 = SPTR2_ / TimeThreshold2_ + sigma2_DCR(npe) + sigma2_electronics(npe) + SigmaClock2_;
+
+      // --- Smear the arrival times using the correlated uncertainties:
+      float smearing_thr1_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr1));
+      float smearing_thr2_uncorr = CLHEP::RandGaussQ::shoot(hre, 0., sqrt(sigma2_tot_thr2));
+
+      finalToA1 += cosPhi_ * smearing_thr1_uncorr + sinPhi_ * smearing_thr2_uncorr;
+      finalToA2 += sinPhi_ * smearing_thr1_uncorr + cosPhi_ * smearing_thr2_uncorr;
+
+      //Smear the energy according to TOFHIR energy branch measured resolution
+      float tofhir_ampnoise_relsigma = ROOT::Math::Chebyshev4(npe,
+                                                              sigmaRelTOFHIRenergy_[0],
+                                                              sigmaRelTOFHIRenergy_[1],
+                                                              sigmaRelTOFHIRenergy_[2],
+                                                              sigmaRelTOFHIRenergy_[3],
+                                                              sigmaRelTOFHIRenergy_[4]);
+      float smearing_tofhir = CLHEP::RandGaussQ::shoot(hre, 0., tofhir_ampnoise_relsigma);
+      // the amplitude resolution already includes the photostatistics fluctuation, use the original average deposit
+      chargeColl[iside] = (it->second).hit_info[2 * iside][iBX] * Npe_to_pC_ *
+                          (1. + smearing_tofhir);  // the p.e. number is here converted to pC
+
+      toa1[iside] = finalToA1;
+      toa2[iside] = finalToA2;
+
+    }  // iside loop
+
+    //run the shaper to create a new data frame
+    // TRIVIAL SHAPER TO BE REWRITTEN WITh REALISTIC DIGI FORMAT
+    // BTLDataFrame rawDataFrame(it->first.detid_);
+    // runTrivialShaper(rawDataFrame, chargeColl, toa1, toa2, it->first.row_, it->first.column_);
+
+
+    // Convert into portions of a BTLDigiSoA
+    uint32_t rawId = it->first.detid_;
+    uint16_t BC0count = (uint16_t)iBX;
+    bool status = true; // status is always true in this implementation
+    uint32_t BCcount = 0; // BCcount is always 0 in this implementation
+    uint8_t chIDR = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)0));
+    uint16_t T1coarseR = timetoTcoarse(toa1[0], T1coarseMask);
+    uint16_t T2coarseR = timetoTcoarse(toa2[0], T2coarseMask);
+    uint16_t EOIcoarseR = 0; // EOIcoarseR is not used in this implementation
+    uint16_t ChargeR = chargetoQfine(chargeColl[0], toa1[0], toa2[0]);
+    uint16_t T1fineR = timetoTfine(toa1[0]);
+    uint16_t T2fineR = timetoTfine(toa2[0]);
+    uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
+    uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
+    uint8_t TACIDR = 0; // TACIDR
+
+    uint8_t chIDL = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)1));
+    uint16_t T1coarseL = timetoTcoarse(toa1[1], T1coarseMask);
+    uint16_t T2coarseL = timetoTcoarse(toa2[1], T2coarseMask);
+    uint16_t EOIcoarseL = 0; // EOIcoarseL is not used in this implementation
+    uint16_t ChargeL = chargetoQfine(chargeColl[1], toa1[1], toa2[1]);
+    uint16_t T1fineL = timetoTfine(toa1[1]);
+    uint16_t T2fineL = timetoTfine(toa2[1]);
+    uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
+    uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
+    uint8_t TACIDL = 0; // TACIDL is not used in this implementation 
+    
+    output.view()[i] = {
+            rawId,
+            BC0count,
+            status,
+            BCcount,
+            chIDR,
+            T1coarseR,
+            T2coarseR,
+            EOIcoarseR,
+            ChargeR,
+            T1fineR,
+            T2fineR,
+            IdleTimeR,
+            PrevTrigFR,
+            TACIDR,
+            chIDL,
+            T1coarseL,
+            T2coarseL,
+            EOIcoarseL,
+            ChargeL,
+            T1fineL,
+            T2fineL,
+            IdleTimeL,
+            PrevTrigFL,
+            TACIDL
+    };
+
+    if (debug_) {
+    
+      edm::LogError("BTLElectronicsSim") << "Hit before trivial Shaper with rawId    : " << rawId
+                << ", row: " << (int)it->first.row_
+                << ", column: " << (int)it->first.column_
+                << ", chIDR: " << (int)chIDR
+                << ", time1R: " << toa1[0]
+                << ", time2R: " << toa2[0]
+                << ", chargeR: " << chargeColl[0]
+                << ", chIDL: " << (int)chIDL
+                << ", time1L: " << toa1[1]
+                << ", time2L: " << toa2[1]
+                << ", chargeL: " << chargeColl[1]
+                << std::endl;
+
+
+      // auto cell = output.view()[i]; // cell è di tipo element
+      edm::LogError("BTLElectronicsSim") << "Processed hit with rawId: " << rawId
+                << ", chIDR: "     << (int)output.view()[i].chIDR() 
+                << ", T1coarseR: " << (int)output.view()[i].T1coarseR()
+                << ", T1fineR: "   << output.view()[i].T1fineR()
+                << ", T2coarseR: " << output.view()[i].T2coarseR()
+                << ", T2fineR: "   << output.view()[i].T2fineR()
+                << ", ChargeR: "   << output.view()[i].ChargeR()
+                << ", chIDL: "     << (int)output.view()[i].chIDL()
+                << ", T1coarseL: " << output.view()[i].T1coarseL()
+                << ", T1fineL: "   << output.view()[i].T1fineL()
+                << ", T2coarseL: " << output.view()[i].T2coarseL()
+                << ", T2fineL: "   << output.view()[i].T2fineL()
+                << ", ChargeL: "   << output.view()[i].ChargeL()
+                << std::endl;
+    }
+    i++; // Increment the index for the next hit
+  }  // MTDSimHitDataAccumulator loop
+}
+
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
                                          const mtd::MTDSimHitData& chargeColl,
                                          const mtd::MTDSimHitData& toa1,
@@ -275,4 +484,57 @@ float BTLElectronicsSim::sigma2_electronics(const float npe) const {
     return 0.;
   }
   return SigmaElectronicNoise2_ * ScintillatorDecayTime2_ / npe / npe;
+}
+
+uint16_t BTLElectronicsSim::timetoTcoarse(const float time, const uint16_t mask) const {
+  // Convert time to Tcoarse
+  uint16_t tcoarse = static_cast<uint16_t>(std::floor((time) / T_clk)) & mask; // Mask to keep only the lower 15 bits
+  return tcoarse; // by design, Tcoarse is at least 1 clk cycle after the arrival of the signal
+}
+
+uint16_t BTLElectronicsSim::timetoTfine(const float time) const {
+  // Convert time to Tfine
+  float time_clk_units = time / T_clk; // Convert time to clock units
+  float qtfine =  std::floor(time_clk_units + 1) - time_clk_units - t0_; // Get the fine time part in clock units
+  uint16_t Tfine = static_cast<uint16_t>(std::floor(a2_ * qtfine * qtfine + a1_ * qtfine + a0_)); // convert into Tfine digits
+
+
+  // float qtfine_reverted = T_clk * (-a1_ + std::sqrt(a1_ * a1_ - 4.0 * (a0_ - qtfine) * a2_)) / (2.0 * a2_);
+  // printf("time: %f, time_clk_units: %f\n", time, time_clk_units);
+  // printf("timeFine: %f, qtfine: %u\n", timeFine, qtfine);
+  // printf("qtfine reverted: %f\n", qtfine_reverted);
+
+  if (Tfine > tdcBitSaturation_) {
+    edm::LogWarning("BTLElectronicsSim") << "BTLElectronicsSim::timetoTfine: Tfine value " << Tfine
+                                             << " exceeds the maximum allowed value of " << tdcBitSaturation_
+                                             << ". Setting Tfine to the maximum allowed value.";
+    Tfine = tdcBitSaturation_; // Ensure Tfine does not exceed the maximum allowed value
+  }
+
+  return Tfine;
+}
+
+uint16_t BTLElectronicsSim::chargetoQfine(const float charge, const float time1, const float time2) const {
+  // Convert charge to qfine
+  float ti = (time2 - time1) / T_clk; // Time of signal integration in clock units
+
+  // evaluate pedestal (qdc calibs)
+  uint32_t pedestal = (
+            p0_
+            + p1_ * ti
+            + p2_ * ti * ti
+            + p3_ * ti * ti * ti
+            + p4_ * ti * ti * ti * ti
+            + p5_ * ti * ti * ti * ti * ti
+            + p6_ * ti * ti * ti * ti * ti * ti
+            + p7_ * ti * ti * ti * ti * ti * ti * ti
+            + p8_ * ti * ti * ti * ti * ti * ti * ti * ti
+            + p9_ * ti * ti * ti * ti * ti * ti * ti * ti * ti
+        );
+
+  const uint32_t adc = std::min((uint32_t)std::floor(charge / adcLSB_MIP_), adcBitSaturation_);
+  uint16_t Qfine = adc + pedestal; // Qfine is the ADC value + pedestal
+
+  // printf  ("charge: %f, ti: %f, pedestal: %u, adc: %u, Qfine: %u\n", charge, ti, pedestal, adc, Qfine);
+  return Qfine;
 }
