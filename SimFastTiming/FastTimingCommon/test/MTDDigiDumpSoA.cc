@@ -117,29 +117,7 @@ void MTDDigiDumpSoA::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
         // << " TACIDL: " << (int)h_BTL_digi_SoA->view()[i].TACIDL() << std::endl;
 
     }
-    // for (const auto& dataFrame : *h_BTL_digi) {
-    //   // --- detector element ID:
-    //   std::cout << "\n BTL DIGI:  row = " << dataFrame.row() << " col = " << dataFrame.column()
-    //             << " BTLDetId = " << dataFrame.id();
-
-    //   // --- loop over the dataFrame samples
-    //   for (int isample = 0; isample < dataFrame.size(); ++isample) {
-    //     const auto& sample = dataFrame.sample(isample);
-
-    //     std::cout << "       sample " << isample << ":";
-    //     if (sample.data() == 0 && sample.toa() == 0) {
-    //       std::cout << std::endl;
-    //       continue;
-    //     }
-    //     std::cout << "  amplitude = " << sample.data() << "  time1 = " << sample.toa() << "  time2 = " << sample.toa2()
-    //               << " r/c = " << (uint32_t)sample.row() << " / " << (uint32_t)sample.column()
-    //               << " th = " << sample.threshold() << " mode = " << sample.mode() << std::endl;
-
-    //   }  // isaple loop
-
-    // }  // digi loop
-
-  }  // if ( h_BTL_digi->size() > 0 )
+  }  // if ( h_BTL_digi_soa->size() > 0 )
 
   // --- ETL DIGIs:
 
