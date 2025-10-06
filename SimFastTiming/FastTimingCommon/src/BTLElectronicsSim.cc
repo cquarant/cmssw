@@ -11,7 +11,7 @@
 using namespace mtd;
 
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
-    : debug_(pset.getUntrackedParameter<bool>("debug", true)),
+    : debug_(pset.getUntrackedParameter<bool>("debug", false)),
       bxTime_(pset.getParameter<double>("bxTime")),
       testBeamMIPTimeRes_(pset.getParameter<double>("TestBeamMIPTimeRes")),
       ScintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
