@@ -14,14 +14,3 @@
   <use name="FWCore/ParameterSet"/>
   <flags EDM_PLUGIN="1"/>
 </library>
-
-<library file="alpaka/*.cc" name="BTLDigiSoAPluginsPortable">
-  <use name="alpaka"/>
-  <use name="DataFormats/JetReco"/>
-  <use name="FWCore/MessageLogger"/>
-  <use name="FWCore/ParameterSet"/>
-  <use name="HeterogeneousCore/AlpakaCore"/>
-  <use name="HeterogeneousCore/AlpakaInterface"/>
-  <flags ALPAKA_BACKENDS="1"/>
-  <flags EDM_PLUGIN="1"/>
-</library>
