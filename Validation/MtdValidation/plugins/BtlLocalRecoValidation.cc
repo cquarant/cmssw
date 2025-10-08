@@ -271,8 +271,8 @@ private:
   MonitorElement* meUncTimeLVsX_;
   MonitorElement* meUncTimeRVsX_;
 
-  static constexpr int nBinsQ_ = 20;
-  static constexpr float binWidthQ_ = 30.;
+  static constexpr int nBinsQ_ = 30;
+  static constexpr float binWidthQ_ = 0.5;  // [MeV]
   static constexpr int nBinsQEta_ = 3;
   static constexpr float binsQEta_[nBinsQEta_ + 1] = {0., 0.65, 1.15, 1.55};
 
@@ -281,8 +281,8 @@ private:
 
   static constexpr int nBinsEta_ = 31;
   static constexpr float binWidthEta_ = 0.05;
-  static constexpr int nBinsEtaQ_ = 10;
-  static constexpr float binsEtaQ_[nBinsEtaQ_ + 1] = {0., 2., 4., 6., 8., 10., 12., 14., 16., 18., 20.};
+  static constexpr int nBinsEtaQ_ = 6;
+  static constexpr float binsEtaQ_[nBinsEtaQ_ + 1] = {0., 2., 4., 6., 8., 12., 15.};
 
   MonitorElement* meTimeResEta_[nBinsEta_];
   MonitorElement* meTimeResEtavsQ_[nBinsEta_][nBinsEtaQ_];
@@ -1678,7 +1678,7 @@ void BtlLocalRecoValidation::bookHistograms(DQMStore::IBooker& ibook,
                                       20.,
                                       "S");
     meUncEneRVsX_ = ibook.bookProfile("BTLUncEneRVsX",
-                                      "BTL uncalibrated right hit energy - average vs X;X [cm];#Delta(E_{R}) [NeV]",
+                                      "BTL uncalibrated right hit energy - average vs X;X [cm];#Delta(E_{R}) [MeV]",
                                       20,
                                       -5.,
                                       5.,

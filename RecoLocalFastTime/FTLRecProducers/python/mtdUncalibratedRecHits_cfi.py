@@ -8,7 +8,7 @@ _barrelAlgo = cms.PSet(
     npeToADC = mtdDigitizer.barrelDigitizer.ElectronicsSimulation.PulseQParam, # Npe to ADC counts conversion
     npePerMeV = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput, # [Npe/MeV]
     tdcLSB_ns = cms.double(0.020), # [ns]
-    timeResolutionInNs = cms.string("0.072468722*pow(x,-0.4175)"), # [ns]
+    timeResolutionInNs = cms.string("0.0593858*pow(x,-1.02826)+0.0156719"), # [ns]
     timeWalkCorrection = cms.string("1.9e6/0.020*pow(9.389e5/0.0348*(x+22.5),-0.663)")
 )
 
