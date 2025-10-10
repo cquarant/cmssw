@@ -60,7 +60,7 @@ private:
   float sigma2_electronics(const float npe) const;
 
   uint16_t timetoTcoarse(float time, const uint16_t mask) const;
-  uint16_t timetoTfine(float time) const;
+  uint16_t timetoTfine(float time, const uint16_t tcoarse) const;
   uint16_t chargetoQfine(float charge, float time1, float time2) const;
 
   const bool debug_;

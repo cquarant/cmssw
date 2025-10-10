@@ -11,7 +11,7 @@
 using namespace mtd;
 
 BTLElectronicsSim::BTLElectronicsSim(const edm::ParameterSet& pset, edm::ConsumesCollector iC)
-    : debug_(pset.getUntrackedParameter<bool>("debug", false)),
+    : debug_(pset.getUntrackedParameter<bool>("debug", true)),
       bxTime_(pset.getParameter<double>("bxTime")),
       testBeamMIPTimeRes_(pset.getParameter<double>("TestBeamMIPTimeRes")),
       ScintillatorRiseTime_(pset.getParameter<double>("ScintillatorRiseTime")),
@@ -199,6 +199,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
   BTLElectronicsMapping elMap = BTLElectronicsMapping(BTLDetId::CrysLayout::v4);
 
   int i = 0;
+  std::vector<int> validHitIndices;
   for (MTDSimHitDataAccumulator::const_iterator it = input.begin(); it != input.end(); it++) {
     // --- Digitize only the in-time bucket:
     const unsigned int iBX = mtd_digitizer::kInTimeBX;
@@ -304,10 +305,19 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     }  // iside loop
 
     //run the shaper to create a new data frame
-    // TRIVIAL SHAPER TO BE REWRITTEN WITh REALISTIC DIGI FORMAT
-    // BTLDataFrame rawDataFrame(it->first.detid_);
-    // runTrivialShaper(rawDataFrame, chargeColl, toa1, toa2, it->first.row_, it->first.column_);
+    // TRIVIAL SHAPER TO BE REWRITTEN WITh REALISTIC DIGI FORMAT, now used only to check if event pass threshold
+    BTLDataFrame rawDataFrame(it->first.detid_);
+    runTrivialShaper(rawDataFrame, chargeColl, toa1, toa2, it->first.row_, it->first.column_);
+    bool putInEvent(false);
+    BTLDataFrame dataFrame(rawDataFrame.id());
+    dataFrame.resize(dfSIZE);
+    for (int it = 0; it < dfSIZE; ++it) {
+      dataFrame.setSample(it, rawDataFrame[it]);
+      if (it == 0)
+        putInEvent = rawDataFrame[it].threshold();
+    }
 
+    if (putInEvent) validHitIndices.push_back(i);
 
     // Convert into portions of a BTLDigiSoA
     uint32_t rawId = it->first.detid_;
@@ -319,8 +329,8 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     uint16_t T2coarseR = timetoTcoarse(toa2[0], T2coarseMask);
     uint16_t EOIcoarseR = 0; // EOIcoarseR is not used in this implementation
     uint16_t ChargeR = chargetoQfine(chargeColl[0], toa1[0], toa2[0]);
-    uint16_t T1fineR = timetoTfine(toa1[0]);
-    uint16_t T2fineR = timetoTfine(toa2[0]);
+    uint16_t T1fineR = timetoTfine(toa1[0], T1coarseR);
+    uint16_t T2fineR = timetoTfine(toa2[0], T2coarseR);
     uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
     uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
     uint8_t TACIDR = 0; // TACIDR
@@ -330,8 +340,8 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     uint16_t T2coarseL = timetoTcoarse(toa2[1], T2coarseMask);
     uint16_t EOIcoarseL = 0; // EOIcoarseL is not used in this implementation
     uint16_t ChargeL = chargetoQfine(chargeColl[1], toa1[1], toa2[1]);
-    uint16_t T1fineL = timetoTfine(toa1[1]);
-    uint16_t T2fineL = timetoTfine(toa2[1]);
+    uint16_t T1fineL = timetoTfine(toa1[1], T1coarseL);
+    uint16_t T2fineL = timetoTfine(toa2[1], T2coarseL);
     uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
     uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
     uint8_t TACIDL = 0; // TACIDL is not used in this implementation 
@@ -397,6 +407,18 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     }
     i++; // Increment the index for the next hit
   }  // MTDSimHitDataAccumulator loop
+
+  int validCount = validHitIndices.size();
+
+  auto queue = cms::alpakatools::host();
+  if (validCount < i) {
+    // construct new host collection with exact size using the same queue as output
+    btldigi::BTLDigiHostCollection newOutput(validCount, queue);
+    for (int idx = 0; idx < validCount; ++idx) {
+      newOutput.view()[idx] = output.view()[validHitIndices[idx]];
+    }
+    output = std::move(newOutput);
+  }
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
@@ -488,21 +510,21 @@ float BTLElectronicsSim::sigma2_electronics(const float npe) const {
 
 uint16_t BTLElectronicsSim::timetoTcoarse(const float time, const uint16_t mask) const {
   // Convert time to Tcoarse
-  uint16_t tcoarse = static_cast<uint16_t>(std::floor((time) / T_clk)) & mask; // Mask to keep only the lower 15 bits
+  float time_clk_units = time / T_clk; // Convert time to clock units
+  uint16_t tcoarse = 0;
+  if (time_clk_units - std::floor(time_clk_units) < 0.5) {
+    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 1) & mask; // Mask to keep only the lower 15 bits
+  }
+  else
+    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 2) & mask; // Mask to keep only the lower 15 bits
   return tcoarse; // by design, Tcoarse is at least 1 clk cycle after the arrival of the signal
 }
 
-uint16_t BTLElectronicsSim::timetoTfine(const float time) const {
+uint16_t BTLElectronicsSim::timetoTfine(const float time, const uint16_t tcoarse) const {
   // Convert time to Tfine
   float time_clk_units = time / T_clk; // Convert time to clock units
-  float qtfine =  std::floor(time_clk_units + 1) - time_clk_units - t0_; // Get the fine time part in clock units
+  float qtfine =  tcoarse - time_clk_units - t0_; // Get the fine time part in clock units
   uint16_t Tfine = static_cast<uint16_t>(std::floor(a2_ * qtfine * qtfine + a1_ * qtfine + a0_)); // convert into Tfine digits
-
-
-  // float qtfine_reverted = T_clk * (-a1_ + std::sqrt(a1_ * a1_ - 4.0 * (a0_ - qtfine) * a2_)) / (2.0 * a2_);
-  // printf("time: %f, time_clk_units: %f\n", time, time_clk_units);
-  // printf("timeFine: %f, qtfine: %u\n", timeFine, qtfine);
-  // printf("qtfine reverted: %f\n", qtfine_reverted);
 
   if (Tfine > tdcBitSaturation_) {
     edm::LogWarning("BTLElectronicsSim") << "BTLElectronicsSim::timetoTfine: Tfine value " << Tfine
