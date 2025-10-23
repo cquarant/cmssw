@@ -9,7 +9,7 @@ _barrelAlgo = cms.PSet(
     npePerMeV = mtdDigitizer.barrelDigitizer.DeviceSimulation.LightOutput, # [Npe/MeV]
     tdcLSB_ns = cms.double(0.020), # [ns]
     timeResolutionInNs = cms.string("0.0593858*pow(x,-1.02826)+0.0156719"), # [ns]
-    timeWalkCorrection = cms.string("1.9e6/0.020*pow(9.389e5/0.0348*(x+22.5),-0.663)")
+    timeWalkCorrection = cms.string("1.9e6/0.020*pow(9.389e5/0.0348*(x+22.5),-0.663)-7.5e-4*x-3.5e-3") # linear ad hoc correction for bias from global delay removal
 )
 
 _endcapAlgo = cms.PSet(
@@ -19,7 +19,7 @@ _endcapAlgo = cms.PSet(
     toaLSB_ns     = mtdDigitizer.endcapDigitizer.ElectronicsSimulation.toaLSB_ns,
     tofDelay      = mtdDigitizer.endcapDigitizer.DeviceSimulation.tofDelay,
     timeResolutionInNs = cms.string("0.0370"), # [ns]
-    timeCorr_p0 = cms.double(0.974683),
+    timeCorr_p0 = cms.double(0.967683), # 0.974683 - 0.007, ad hoc correction for bias from global delay removal
     timeCorr_p1 = cms.double(-0.237274),
     timeCorr_p2 = cms.double(0.021455),
     timeCorr_p3 = cms.double(-0.000727429)
