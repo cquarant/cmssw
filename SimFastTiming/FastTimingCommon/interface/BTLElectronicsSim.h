@@ -8,6 +8,10 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 
 #include "DataFormats/FTLDigi/interface/FTLDigiCollections.h"
+#include "DataFormats/FTLDigiSoA/interface/BTLDigiHostCollection.h"
+
+#include "Geometry/MTDCommonData/interface/BTLElectronicsMapping.h"
+
 #include "SimFastTiming/FastTimingCommon/interface/MTDDigitizerTypes.h"
 
 namespace mtd = mtd_digitizer;
@@ -27,6 +31,8 @@ public:
   void getEventSetup(const edm::EventSetup& evt) {}
 
   void run(const mtd::MTDSimHitDataAccumulator& input, BTLDigiCollection& output, CLHEP::HepRandomEngine* hre) const;
+
+  void run(const mtd::MTDSimHitDataAccumulator& input, btldigi::BTLDigiHostCollection& output, CLHEP::HepRandomEngine* hre) const;
 
   void runTrivialShaper(BTLDataFrame& dataFrame,
                         const float (&charge)[2],
@@ -62,12 +68,42 @@ private:
 
   float pulse_qRes(const float& npe) const;
 
+  uint16_t timetoTcoarse(float time, const uint16_t mask) const;
+  
+  uint16_t timetoTfine(float time, const uint16_t tcoarse) const;
+  
+  uint16_t chargetoQfine(float charge, float time1, float time2) const;
+
   static constexpr float sqrt2_ = 1.41421356f;
 
   static constexpr float tofhirClock_ = 6.25f;  // [ns]
   static constexpr uint32_t adcBitSaturation_ = 1023;
   static constexpr uint32_t tdcBitSaturation_ = 1023;
   static constexpr float tdcLSB_ns_ = 0.020;  // [ns]
+
+  static constexpr uint16_t T1coarseMask = 0x7FFF; // 15 bits for T1 coarse time
+  static constexpr uint16_t T2coarseMask = 0x2FF; // 10 bits for T2 coarse time
+  static constexpr uint16_t TfineShift = 5;   // 10 bits for fine time
+
+  // tdc calibration parameters 
+  // (to be modified: these parameters are evaluated by channel and stored in parquet files)
+  static constexpr float a0_ = 57.244545; 
+  static constexpr float a1_ = 511.27832; 
+  static constexpr float a2_ = -7.8838577;
+  static constexpr float t0_ = -0.048343264; 
+
+  // qdc calibration parameters 
+  // (to be modified: these parameters are evaluated by channel and stored in parquet files)
+  static constexpr float p0_ = 49.542229; 
+  static constexpr float p1_ = -0.323424;
+  static constexpr float p2_ = 0.062578;
+  static constexpr float p3_ = -0.002484;
+  static constexpr float p4_ = 0.0;
+  static constexpr float p5_ = 0.0;
+  static constexpr float p6_ = 0.0;
+  static constexpr float p7_ = 0.0;
+  static constexpr float p8_ = 0.0;
+  static constexpr float p9_ = 0.0;
 
   static constexpr uint32_t numberOfRUs_ = 432;
   std::array<float, numberOfRUs_>* smearingClockRU_;
@@ -100,6 +136,7 @@ private:
   const std::vector<double> paramPulseQ_;
   const std::vector<double> paramPulseQRes_;
   const float corrCoeff_;
+  const float integrationTimeFixed_; // fixed integration time in clock cycles 
   const float cosPhi_;
   const float sinPhi_;
   const float scintillatorDecayTimeInv_;

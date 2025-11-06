@@ -20,6 +20,18 @@ public:
   typedef BTLElectronicsSim ElectronicsSim;
 };
 
+class BTLDigitizerTraitsSoA {
+public:
+  // --- The BTL DIGI collection
+  typedef btldigi::BTLDigiHostCollection DigiCollection;
+
+  // --- The BTL sensor response simulation for the bar geometry
+  typedef BTLDeviceSim DeviceSim;
+
+  // --- The BTL electronics simulation using BTL Digi in SoA format
+  typedef BTLElectronicsSim ElectronicsSim;
+};
+
 class ETLDigitizerTraits {
 public:
   // --- The ETL DIGI collection

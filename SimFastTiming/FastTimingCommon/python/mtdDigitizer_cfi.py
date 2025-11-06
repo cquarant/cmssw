@@ -47,12 +47,60 @@ _barrel_MTDDigitizer = cms.PSet(
         SigmaClockGlobal          = cms.double(0.007),  # [ns], uncertainty due to the global LHC clock distribution
         SigmaClockRU              = cms.double(0.005),  # [ns], uncertainty due to clock distribution within the readout units
         CorrelationCoefficient    = cms.double(1.),     # correlation coefficient between T1 and T2 uncertainties
+        IntegrationTimeFixed      = cms.uint32(2),      # [ns], fixed integration time window for the signal charge integration
+
 
         PulseQParam               = cms.vdouble(-22.5, 0.0348), # pulse amplitude in ADC counts vs Npe
         PulseQResParam            = cms.vdouble(51., -0.88),    # relative amplitude resolution vs Npe
         )
+)
 
+_barrel_MTDDigitizer_SoA = cms.PSet(
+    digitizerName     = cms.string("BTLDigitizerSoA"),
+    inputSimHits      = cms.InputTag("g4SimHits:FastTimerHitsBarrel"),
+    digiCollectionTag = cms.string("FTLBarrelSoA"),
+    maxSimHitsAccTime = cms.uint32(100),
+    premixStage1      = cms.bool(False),
+    premixStage1MinCharge = cms.double(1e-4),
+    premixStage1MaxCharge = cms.double(1e6),
+    DeviceSimulation = cms.PSet(
+        _common_BTLparameters,
+        LightCollectionSlope      = cms.double(0.0915), # [ns/cm]
+        SigmaLightCollectionSlope = cms.double(0.001)  # [ns/cm] sigma of the light collection slope
+        ),
+    ElectronicsSimulation = cms.PSet(
+        _common_BTLparameters,
+        SigmaLCEpositionSlope     = cms.double(0.002),  # [1/cm] sigma of the LCE variation vs longitudinal position shift
+        PulseT2Threshold          = cms.double(8.764),  # [uA] T2 threshold
+        PulseEThrershold          = cms.double(20.32),  # [uA] energy threshold (it corresponds to 1 MeV)
+        ChannelRearmMode          = cms.uint32(2),      # 0: the channel rearming is switched off
+                                                        # 1: the channel is rearmed after the end-of-event signal
+                                                        # 2: the channel is rearmed after ChannelRearmNClocks cycles of the TOFHiR clock
+        ChannelRearmNClocks       = cms.double(3.),     # number of TOFHiR clock cycles after which the channel is rearmed
+        T1Delay                   = cms.double(0.),     # [ns]
+        SiPMGain                  = cms.double(9.389e5),# SiPM gain at Vov = 3 V
+        PulseTbranchAParam        = cms.vdouble(-2.2, 1.89e-8), # average pulse amplitude in uA vs Gain * Npe in the TOFHiR's time branch
+        PulseEbranchAParam        = cms.vdouble(-1.3, 1.01e-8), # average pulse amplitude in uA vs Gain * Npe in the TOFHiR's energy branch
+        TimeAtThr1RiseParam       = cms.vdouble(1.9e6,-0.663), # time at threshold T1 (20 DAC) vs Gain * Npe on the rising edge
+        TimeAtThr2RiseParam       = cms.vdouble(5.2e6,-0.704), # time at threshold T2 (28 DAC) vs Gain * Npe on the rising edge
+        TimeOverThr1Param         = cms.vdouble(1.4776e9,7.93403,-3.78578e-10,5.42505e-18,-2.27325e-27,-7.32799e-10,12.933), # time over the T1 threshold vs Gain * Npe
+        SmearTimeForOOTtails      = cms.bool(True),     # switch to turn ON/OFF the uncertainty due to photons from OOT hits
+        ScintillatorRiseTime      = cms.double(1.1),    # [ns]
+        ScintillatorDecayTime     = cms.double(42.8),   # [ns]
+        StocasticParam            = cms.vdouble(14.746531, 0.7), # (0.030[ns]*7000^0.7, 0.7)
+        DarkCountRate             = cms.double(0.),     # [GHz]
+        DCRParam                  = cms.vdouble(50.583684, 0.41), # (0.034[ns]*6000/30^0.41, 0.41)
+        SigmaElectronicNoise      = cms.double(0.420),  # [uA]
+        SlewRateParam             = cms.vdouble(1.3e9,-3.5,10.9e-9,14.7), # parameterization of slew rate vs Gain * npe
+        SigmaTDC                  = cms.double(0.0133), # [ns]
+        SigmaClockGlobal          = cms.double(0.007),  # [ns], uncertainty due to the global LHC clock distribution
+        SigmaClockRU              = cms.double(0.005),  # [ns], uncertainty due to clock distribution within the readout units
+        CorrelationCoefficient    = cms.double(1.),     # correlation coefficient between T1 and T2 uncertainties
+        IntegrationTimeFixed      = cms.uint32(2),      # [ns], fixed integration time window for the signal charge integration
 
+        PulseQParam               = cms.vdouble(-22.5, 0.0348), # pulse amplitude in ADC counts vs Npe
+        PulseQResParam            = cms.vdouble(51., -0.88),    # relative amplitude resolution vs Npe
+        )
 )
 
 _endcap_MTDDigitizer = cms.PSet(
@@ -105,7 +153,7 @@ from Configuration.Eras.Modifier_phase2_etlV4_cff import phase2_etlV4
 phase2_etlV4.toModify(_endcap_MTDDigitizer.DeviceSimulation, meVPerMIP = 0.015 )
 
 from Configuration.ProcessModifiers.premix_stage1_cff import premix_stage1
-for _m in [_barrel_MTDDigitizer, _endcap_MTDDigitizer]:
+for _m in [_barrel_MTDDigitizer, _barrel_MTDDigitizer_SoA, _endcap_MTDDigitizer]:
     premix_stage1.toModify(_m, premixStage1 = True)
 
 # Fast Timing
@@ -115,5 +163,6 @@ mtdDigitizer = cms.PSet(
     verbosity         = cms.untracked.uint32(0),
 
     barrelDigitizer = _barrel_MTDDigitizer,
+    barrelDigitizerSoA = _barrel_MTDDigitizer_SoA,
     endcapDigitizer = _endcap_MTDDigitizer
 )

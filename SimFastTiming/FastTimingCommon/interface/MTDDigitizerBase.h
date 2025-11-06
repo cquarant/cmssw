@@ -9,6 +9,7 @@
 #include "SimDataFormats/TrackingHit/interface/PSimHit.h"
 #include "SimDataFormats/TrackingHit/interface/PSimHitContainer.h"
 
+#include "DataFormats/FTLDigiSoA/interface/BTLDigiHostCollection.h"
 #include "DataFormats/FTLDigi/interface/FTLDigiCollections.h"
 #include "DataFormats/FTLDigi/interface/PMTDSimAccumulator.h"
 #include "SimFastTiming/FastTimingCommon/interface/MTDDigitizerTypes.h"
@@ -48,6 +49,12 @@ public:
         producesCollector.produces<PMTDSimAccumulator>(digiCollection_);
       } else {
         producesCollector.produces<BTLDigiCollection>(digiCollection_);
+      }
+    } else if (name_ == "BTLDigitizerSoA") {
+      if (premixStage1_) {
+        producesCollector.produces<PMTDSimAccumulator>(digiCollection_);
+      } else {
+        producesCollector.produces<btldigi::BTLDigiHostCollection>(digiCollection_);
       }
     } else if (name_ == "ETLDigitizer")
       if (premixStage1_) {
