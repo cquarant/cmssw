@@ -11,10 +11,10 @@
 #include "DataFormats/FTLDigi/interface/FTLDigiCollections.h"
 #include "DataFormats/FTLDigiSoA/interface/BTLDigiHostCollection.h"
 
-class MTDDigiDumpSoA : public edm::one::EDAnalyzer<edm::one::SharedResources> {
+class MTDDigiDump : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
-  explicit MTDDigiDumpSoA(const edm::ParameterSet&);
-  ~MTDDigiDumpSoA() override;
+  explicit MTDDigiDump(const edm::ParameterSet&);
+  ~MTDDigiDump() override;
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions);
 
@@ -30,7 +30,7 @@ private:
   edm::EDGetTokenT<ETLDigiCollection> tok_ETL_digi;
 };
 
-MTDDigiDumpSoA::MTDDigiDumpSoA(const edm::ParameterSet& iConfig)
+MTDDigiDump::MTDDigiDump(const edm::ParameterSet& iConfig)
 
 {
   tok_BTL_digi = consumes<BTLDigiCollection>(edm::InputTag("mix", "FTLBarrel"));
@@ -38,14 +38,14 @@ MTDDigiDumpSoA::MTDDigiDumpSoA(const edm::ParameterSet& iConfig)
   tok_ETL_digi = consumes<ETLDigiCollection>(edm::InputTag("mix", "FTLEndcap"));
 }
 
-MTDDigiDumpSoA::~MTDDigiDumpSoA() {}
+MTDDigiDump::~MTDDigiDump() {}
 
 //
 // member functions
 //
 
 // ------------ method called for each event ------------
-void MTDDigiDumpSoA::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
+void MTDDigiDump::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetup) {
   using namespace std;
 
   edm::Handle<BTLDigiCollection> h_BTL_digi;
@@ -151,13 +151,13 @@ void MTDDigiDumpSoA::analyze(const edm::Event& iEvent, const edm::EventSetup& iS
 }
 
 // ------------ method called once each job just before starting event loop  ------------
-void MTDDigiDumpSoA::beginJob() {}
+void MTDDigiDump::beginJob() {}
 
 // ------------ method called once each job just after ending the event loop  ------------
-void MTDDigiDumpSoA::endJob() {}
+void MTDDigiDump::endJob() {}
 
 // ------------ method fills 'descriptions' with the allowed parameters for the module  ------------
-void MTDDigiDumpSoA::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
+void MTDDigiDump::fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
   //The following says we do not know what parameters are allowed so do no validation
   // Please change this to state exactly what you do use, even if it is no parameters
   edm::ParameterSetDescription desc;
@@ -166,4 +166,4 @@ void MTDDigiDumpSoA::fillDescriptions(edm::ConfigurationDescriptions& descriptio
 }
 
 //define this as a plug-in
-DEFINE_FWK_MODULE(MTDDigiDumpSoA);
+DEFINE_FWK_MODULE(MTDDigiDump);
