@@ -1,4 +1,3 @@
-#define EDM_ML_DEBUG
 #include "SimFastTiming/FastTimingCommon/interface/BTLElectronicsSim.h"
 
 #include "FWCore/Framework/interface/ConsumesCollector.h"
@@ -134,6 +133,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
       // --- Skip the hit if its amplitude is below the T2 threshold
       if (pulse_tbranch_uA(npe[iside]) < pulseT2Threshold_) {
+        
         continue;
       }
 
@@ -234,9 +234,12 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       float sigma_amp = amp * pulse_qRes((it->second).hit_info[2 * iside][iBX]);
 
       charge_adc[iside] = CLHEP::RandGaussQ::shoot(hre, amp, sigma_amp);
-
     }  // iside loop
 
+    // --- skip if both sides are empty
+    if (charge_adc[0] == 0 && charge_adc[1] == 0) continue;
+    if (toa1[0] == 0 && toa1[1] == 0) continue;
+    
     // --- Run the shaper to create a new data frame
     BTLDataFrame rawDataFrame(it->first.detid_);
     runTrivialShaper(rawDataFrame, charge_adc, toa1, toa2, it->first.row_, it->first.column_);
@@ -410,9 +413,14 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       float sigma_amp = amp * pulse_qRes((it->second).hit_info[2 * iside][iBX]);
 
       charge_adc[iside] = CLHEP::RandGaussQ::shoot(hre, amp, sigma_amp);
-
     }  // iside loop
 
+    // --- skip if both sides are empty
+    if ( (charge_adc[0] == 0 && charge_adc[1] == 0) || (toa1[0] == 0 && toa1[1] == 0)) {
+      hitIndex++;
+      continue;
+    }
+    
     // --- Run the shaper to create a new data frame
     BTLDataFrame rawDataFrame(it->first.detid_);
     runTrivialShaper(rawDataFrame, charge_adc, toa1, toa2, it->first.row_, it->first.column_);
@@ -433,33 +441,43 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
     uint16_t BC0count = (uint16_t)iBX;
     bool status = true; // status is always true in this implementation
     uint32_t BCcount = 0; // BCcount is always 0 in this implementation
-    uint8_t chIDR = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)0));
-    uint16_t T1coarseR = timetoTcoarse(toa1[0], T1coarseMask);
-    uint16_t T2coarseR = timetoTcoarse(toa2[0], T2coarseMask);
-    uint16_t EOIcoarseR = T1coarseR + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeR = chargetoQfine(charge_adc[0], toa1[0], toa2[0]);
-    uint16_t T1fineR = timetoTfine(toa1[0], T1coarseR);
-    uint16_t T2fineR = timetoTfine(toa2[0], T2coarseR);
-    uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
-    uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
-    uint8_t TACIDR = 0; // TACIDR
-
-    uint8_t chIDL = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)1));
-    uint16_t T1coarseL = timetoTcoarse(toa1[1], T1coarseMask);
-    uint16_t T2coarseL = timetoTcoarse(toa2[1], T2coarseMask);
+    uint8_t chIDL = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)0));
+    uint16_t T1coarseL = timetoTcoarse(toa1[0], T1coarseMask);
+    uint16_t T2coarseL = timetoTcoarse(toa2[0], T2coarseMask);
     uint16_t EOIcoarseL = T1coarseL + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeL = chargetoQfine(charge_adc[1], toa1[1], toa2[1]);
-    uint16_t T1fineL = timetoTfine(toa1[1], T1coarseL);
-    uint16_t T2fineL = timetoTfine(toa2[1], T2coarseL);
+    uint16_t ChargeL = chargetoQfine(charge_adc[0], toa1[0], toa2[0]);
+    uint16_t T1fineL = timetoTfine(toa1[0], T1coarseL);
+    uint16_t T2fineL = timetoTfine(toa2[0], T2coarseL);
     uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
     uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
     uint8_t TACIDL = 0; // TACIDL is not used in this implementation
+
+    uint8_t chIDR = static_cast<uint8_t>(elMap.TOFHIRCh((uint32_t)rawId, (uint32_t)1));
+    uint16_t T1coarseR = timetoTcoarse(toa1[1], T1coarseMask);
+    uint16_t T2coarseR = timetoTcoarse(toa2[1], T2coarseMask);
+    uint16_t EOIcoarseR = T1coarseR + static_cast<uint16_t>(integrationTimeFixed_);
+    uint16_t ChargeR = chargetoQfine(charge_adc[1], toa1[1], toa2[1]);
+    uint16_t T1fineR = timetoTfine(toa1[1], T1coarseR);
+    uint16_t T2fineR = timetoTfine(toa2[1], T2coarseR);
+    uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
+    uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
+    uint8_t TACIDR = 0; // TACIDR is not used in this implementation
 
     output.view()[hitIndex] = {
             rawId,
             BC0count,
             status,
             BCcount,
+            chIDR,
+            T1coarseL,
+            T2coarseL,
+            EOIcoarseL,
+            ChargeL,
+            T1fineL,
+            T2fineL,
+            IdleTimeL,
+            PrevTrigFL,
+            TACIDL,
             chIDR,
             T1coarseR,
             T2coarseR,
@@ -469,17 +487,7 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
             T2fineR,
             IdleTimeR,
             PrevTrigFR,
-            TACIDR,
-            chIDL,
-            T1coarseL,
-            T2coarseL,
-            EOIcoarseL,
-            ChargeL,
-            T1fineL,
-            T2fineL,
-            IdleTimeL,
-            PrevTrigFL,
-            TACIDL
+            TACIDR
     };
 
     if (debug_) {
@@ -487,33 +495,33 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       edm::LogError("BTLElectronicsSim") << "Hit before trivial Shaper with rawId    : " << rawId
                 << ", row: " << (int)it->first.row_
                 << ", column: " << (int)it->first.column_
-                << ", chIDR: " << (int)chIDR
-                << ", time1R: " << toa1[0]
-                << ", time2R: " << toa2[0]
-                << ", chargeR: " << charge_adc[0]
                 << ", chIDL: " << (int)chIDL
-                << ", time1L: " << toa1[1]
-                << ", time2L: " << toa2[1]
-                << ", chargeL: " << charge_adc[1]
+                << ", time1L: " << toa1[0]
+                << ", time2L: " << toa2[0]
+                << ", chargeL: " << charge_adc[0]
+                << ", chIDR: " << (int)chIDR
+                << ", time1R: " << toa1[1]
+                << ", time2R: " << toa2[1]
+                << ", chargeR: " << charge_adc[1]
                 << std::endl;
 
 
       // auto cell = output.view()[hitIndex]; // cell è di tipo element
       edm::LogError("BTLElectronicsSim") << "Processed hit with rawId: " << rawId
-                << ", chIDR: "     << (int)output.view()[hitIndex].chIDR()
-                << ", T1coarseR: " << (int)output.view()[hitIndex].T1coarseR()
-                << ", T1fineR: "   << output.view()[hitIndex].T1fineR()
-                << ", T2coarseR: " << output.view()[hitIndex].T2coarseR()
-                << ", T2fineR: "   << output.view()[hitIndex].T2fineR()
-                << ", EOIcoarseR: " << output.view()[hitIndex].EOIcoarseR()
-                << ", ChargeR: "   << output.view()[hitIndex].ChargeR()
                 << ", chIDL: "     << (int)output.view()[hitIndex].chIDL()
-                << ", T1coarseL: " << output.view()[hitIndex].T1coarseL()
+                << ", T1coarseL: " << (int)output.view()[hitIndex].T1coarseL()
                 << ", T1fineL: "   << output.view()[hitIndex].T1fineL()
                 << ", T2coarseL: " << output.view()[hitIndex].T2coarseL()
                 << ", T2fineL: "   << output.view()[hitIndex].T2fineL()
                 << ", EOIcoarseL: " << output.view()[hitIndex].EOIcoarseL()
                 << ", ChargeL: "   << output.view()[hitIndex].ChargeL()
+                << ", chIDR: "     << (int)output.view()[hitIndex].chIDR()
+                << ", T1coarseR: " << output.view()[hitIndex].T1coarseR()
+                << ", T1fineR: "   << output.view()[hitIndex].T1fineR()
+                << ", T2coarseR: " << output.view()[hitIndex].T2coarseR()
+                << ", T2fineR: "   << output.view()[hitIndex].T2fineR()
+                << ", EOIcoarseR: " << output.view()[hitIndex].EOIcoarseR()
+                << ", ChargeR: "   << output.view()[hitIndex].ChargeR()
                 << std::endl;
     }
     hitIndex++; // Increment the index for the next hit
