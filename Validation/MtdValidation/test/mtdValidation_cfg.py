@@ -57,8 +57,9 @@ for a in process.aliases: delattr(process, a)
 # --- BTL Validation
 process.load("Validation.MtdValidation.btlSimHitsValid_cfi")
 process.load("Validation.MtdValidation.btlDigiHitsValid_cfi")
+process.load("Validation.MtdValidation.btlDigiSoAHitsValid_cfi")
 process.load("Validation.MtdValidation.btlLocalRecoValid_cfi")
-btlValidation = cms.Sequence(process.btlSimHitsValid + process.btlDigiHitsValid + process.btlLocalRecoValid)
+btlValidation = cms.Sequence(process.btlSimHitsValid + process.btlDigiHitsValid + process.btlDigiSoAHitsValid + process.btlLocalRecoValid)
 
 # --- ETL Validation
 process.load("Validation.MtdValidation.etlSimHitsValid_cfi")
