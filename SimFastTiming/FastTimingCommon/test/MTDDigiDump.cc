@@ -9,6 +9,7 @@
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 
 #include "DataFormats/FTLDigi/interface/FTLDigiCollections.h"
+#include "DataFormats/FTLDigiSoA/interface/BTLDigiHostCollection.h"
 
 class MTDDigiDump : public edm::one::EDAnalyzer<edm::one::SharedResources> {
 public:
@@ -25,6 +26,7 @@ private:
   // ----------member data ---------------------------
 
   edm::EDGetTokenT<BTLDigiCollection> tok_BTL_digi;
+  edm::EDGetTokenT<btldigi::BTLDigiHostCollection> tok_BTL_digi_SoA;
   edm::EDGetTokenT<ETLDigiCollection> tok_ETL_digi;
 };
 
@@ -32,6 +34,7 @@ MTDDigiDump::MTDDigiDump(const edm::ParameterSet& iConfig)
 
 {
   tok_BTL_digi = consumes<BTLDigiCollection>(edm::InputTag("mix", "FTLBarrel"));
+  tok_BTL_digi_SoA = consumes<btldigi::BTLDigiHostCollection>(edm::InputTag("mix", "FTLBarrelSoA"));
   tok_ETL_digi = consumes<ETLDigiCollection>(edm::InputTag("mix", "FTLEndcap"));
 }
 
@@ -47,6 +50,9 @@ void MTDDigiDump::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
 
   edm::Handle<BTLDigiCollection> h_BTL_digi;
   iEvent.getByToken(tok_BTL_digi, h_BTL_digi);
+
+  edm::Handle<btldigi::BTLDigiHostCollection> h_BTL_digi_SoA;
+  iEvent.getByToken(tok_BTL_digi_SoA, h_BTL_digi_SoA);
 
   edm::Handle<ETLDigiCollection> h_ETL_digi;
   iEvent.getByToken(tok_ETL_digi, h_ETL_digi);
@@ -80,6 +86,40 @@ void MTDDigiDump::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     }  // digi loop
 
   }  // if ( h_BTL_digi->size() > 0 )
+
+  if (h_BTL_digi_SoA->view().metadata().size() > 0) {
+    std::cout << " ----------------------------------------" << std::endl;
+    std::cout << " BTL DIGI SoA collection: " << h_BTL_digi_SoA->view().metadata().size() << "\n" << std::endl;
+
+    for(int i=0; i<h_BTL_digi_SoA->view().metadata().size(); i++){
+
+      std::cout << "SoA row" << i << ", rawId : " << h_BTL_digi_SoA->view()[i].rawId() << "\n"
+        << " BC0count(evt number): " << h_BTL_digi_SoA->view()[i].BC0count() << "\n"
+        // << " status: " << h_BTL_digi_SoA->view()[i].status() << "\n"
+        // << " BCcount: " << h_BTL_digi_SoA->view()[i].BCcount() << "\n"
+        << " chIDR: " << (int)h_BTL_digi_SoA->view()[i].chIDR() << "\n"
+        << " T1coarseR: " << h_BTL_digi_SoA->view()[i].T1coarseR() << "\n"
+        << " T1fineR: " << h_BTL_digi_SoA->view()[i].T1fineR() << "\n"
+        << " T2coarseR: " << h_BTL_digi_SoA->view()[i].T2coarseR() << "\n"
+        << " T2fineR: " << h_BTL_digi_SoA->view()[i].T2fineR() << "\n"
+        << " EOIcoarseR: " << h_BTL_digi_SoA->view()[i].EOIcoarseR() << "\n"
+        << " qfineR: " << h_BTL_digi_SoA->view()[i].ChargeR() << "\n"
+        << " chIDL: " << (int)h_BTL_digi_SoA->view()[i].chIDL() << "\n"
+        << " T1coarseL: " << h_BTL_digi_SoA->view()[i].T1coarseL() << "\n"
+        << " T1fineL: " << h_BTL_digi_SoA->view()[i].T1fineL() << "\n"
+        << " T2coarseL: " << h_BTL_digi_SoA->view()[i].T2coarseL() << "\n"
+        << " T2fineL: " << h_BTL_digi_SoA->view()[i].T2fineL() << "\n"
+        << " EOIcoarseL: " << h_BTL_digi_SoA->view()[i].EOIcoarseL() << "\n"
+        << " qfineL: " << h_BTL_digi_SoA->view()[i].ChargeL() << "\n" << std::endl;
+        // << " IdleTimeR: " << h_BTL_digi_SoA->view()[i].IdleTimeR() << "\n"
+        // << " PrevTrigFR: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFR() << "\n"
+        // << " TACIDR: " << (int)h_BTL_digi_SoA->view()[i].TACIDR() << "\n"
+        // << " IdleTimeL: " << h_BTL_digi_SoA->view()[i].IdleTimeL() << "\n"
+        // << " PrevTrigFL: " << (int)h_BTL_digi_SoA->view()[i].PrevTrigFL() << "\n"
+        // << " TACIDL: " << (int)h_BTL_digi_SoA->view()[i].TACIDL() << std::endl;
+
+    }
+  }  // if ( h_BTL_digi_soa->size() > 0 )
 
   // --- ETL DIGIs:
 
