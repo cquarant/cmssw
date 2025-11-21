@@ -300,9 +300,9 @@ void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
     newSample.set(false, false, 0, 0, 0, row, col);
 
     //brute force saturation, maybe could to better with an exponential like saturation
-    const uint32_t adc = std::min((uint32_t)std::round(charge_adc[iside]), adcBitSaturation_);
-    const uint32_t tdc_time1 = std::min((uint32_t)std::round(toa1[iside] / tdcLSB_ns_), tdcBitSaturation_);
-    const uint32_t tdc_time2 = std::min((uint32_t)std::round(toa2[iside] / tdcLSB_ns_), tdcBitSaturation_);
+    const uint32_t adc = std::min(static_cast<uint32_t>(std::round(charge_adc[iside])), adcBitSaturation_);
+    const uint32_t tdc_time1 = std::min(static_cast<uint32_t>(std::round(toa1[iside] / tdcLSB_ns_)), tdcBitSaturation_);
+    const uint32_t tdc_time2 = std::min(static_cast<uint32_t>(std::round(toa2[iside] / tdcLSB_ns_)), tdcBitSaturation_);
 
     newSample.set(true, tdc_time1 == tdcBitSaturation_, tdc_time2, tdc_time1, adc, row, col);
     dataFrame.setSample(iside, newSample);
@@ -552,7 +552,7 @@ uint16_t BTLElectronicsSim::chargetoQfine(const float charge, const float time1,
             + p9_ * ti * ti * ti * ti * ti * ti * ti * ti * ti
         );
 
-  const uint32_t adc = std::min((uint32_t)std::floor(charge), adcBitSaturation_);
+  const uint32_t adc = std::min(static_cast<uint32_t>(std::floor(charge)), adcBitSaturation_);
   uint16_t Qfine = adc + pedestal; // Qfine is the ADC value + pedestal
 
   // printf  ("charge: %f, ti: %f, pedestal: %u, adc: %u, Qfine: %u\n", charge, ti, pedestal, adc, Qfine);
