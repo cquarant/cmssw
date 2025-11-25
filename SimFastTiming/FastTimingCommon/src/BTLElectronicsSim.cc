@@ -334,7 +334,9 @@ bool BTLElectronicsSim::checkValidHit(const BTLDataFrame& rawDataFrame) const {
 }
 
 void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame& rawDataFrame) const {
-    coll.push_back(rawDataFrame);
+  BTLDataFrame dataFrame(rawDataFrame.id());
+  dataFrame.resize(dfSIZE);
+  coll.push_back(rawDataFrame);
 }
 
 void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll, 
@@ -353,7 +355,7 @@ void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll,
     uint16_t T1coarseL = timetoTcoarse(toa1[0], T1coarseMask);
     uint16_t T2coarseL = timetoTcoarse(toa2[0], T2coarseMask);
     uint16_t EOIcoarseL = T1coarseL + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeL = chargetoQfine(charge_adc[0], toa1[0], toa2[0]);
+    uint16_t ChargeL = chargetoQfine(charge_adc[0], toa1[0], EOIcoarseL);
     uint16_t T1fineL = timetoTfine(toa1[0], T1coarseL);
     uint16_t T2fineL = timetoTfine(toa2[0], T2coarseL);
     uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
@@ -364,7 +366,7 @@ void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll,
     uint16_t T1coarseR = timetoTcoarse(toa1[1], T1coarseMask);
     uint16_t T2coarseR = timetoTcoarse(toa2[1], T2coarseMask);
     uint16_t EOIcoarseR = T1coarseR + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeR = chargetoQfine(charge_adc[1], toa1[1], toa2[1]);
+    uint16_t ChargeR = chargetoQfine(charge_adc[1], toa1[1], EOIcoarseR);
     uint16_t T1fineR = timetoTfine(toa1[1], T1coarseR);
     uint16_t T2fineR = timetoTfine(toa2[1], T2coarseR);
     uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
