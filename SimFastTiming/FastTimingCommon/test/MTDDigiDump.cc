@@ -91,7 +91,7 @@ void MTDDigiDump::analyze(const edm::Event& iEvent, const edm::EventSetup& iSetu
     std::cout << " ----------------------------------------" << std::endl;
     std::cout << " BTL DIGI SoA collection: " << h_BTL_digi_SoA->view().metadata().size() << "\n" << std::endl;
 
-    for(int i=0; i<h_BTL_digi_SoA->view().metadata().size(); i++){
+    for (int i = 0; i < h_BTL_digi_SoA->view().metadata().size(); i++) {
       std::cout << h_BTL_digi_SoA->view()[i] << "\n" << std::endl;
     }
     //   std::cout << "SoA row" << i << ", rawId : " << h_BTL_digi_SoA->view()[i].rawId() << "\n"

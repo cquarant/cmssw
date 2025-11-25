@@ -69,7 +69,7 @@ BTLElectronicsMapping::SiPMChPair BTLElectronicsMapping::GetSiPMChPair(uint32_t 
 
 // Get TOFHIR Channel from crystal ID
 
-int BTLElectronicsMapping::TOFHIRCh(uint32_t smodCopy, uint32_t crystal, uint32_t SiPMSide) const{
+int BTLElectronicsMapping::TOFHIRCh(uint32_t smodCopy, uint32_t crystal, uint32_t SiPMSide) const {
   int SiPMCh_ = BTLElectronicsMapping::SiPMCh(smodCopy, crystal, SiPMSide);
   return BTLElectronicsMapping::THChannelMap[SiPMCh_];
 }
@@ -199,7 +199,7 @@ int BTLElectronicsMapping::FEBoard(BTLDetId det) const {
   return BTLElectronicsMapping::FEBoardFromDM(dmodule);
 }
 
-int BTLElectronicsMapping::FEBoard(uint32_t rawID) const{
+int BTLElectronicsMapping::FEBoard(uint32_t rawID) const {
   BTLDetId theId(rawID);
   return BTLElectronicsMapping::FEBoard(theId);
 }

@@ -75,6 +75,7 @@ public:
   int CCBoardFromRU(uint32_t dmodule) const;
   int CCBoard(BTLDetId det) const;
   int CCBoard(uint32_t rawID) const;
+
 private:
 };
 

@@ -37,8 +37,8 @@ public:
       : inputSimHits_(config.getParameter<edm::InputTag>("inputSimHits")),
         digiCollection_(config.getParameter<std::string>("digiCollectionTag")),
         digiCollectionSoA_(config.existsAs<std::string>("digiCollectionSoATag")
-                        ? config.getParameter<std::string>("digiCollectionSoATag")
-                        : ""),
+                               ? config.getParameter<std::string>("digiCollectionSoATag")
+                               : ""),
         verbosity_(config.getUntrackedParameter<uint32_t>("verbosity", 0)),
         refSpeed_(0.1 * CLHEP::c_light),
         premixStage1MinCharge_(config.getParameter<double>("premixStage1MinCharge")),

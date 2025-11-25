@@ -239,19 +239,15 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
 
     }  // iside loop
 
-    if (debug_){
+    if (debug_) {
       edm::LogError("BTLElectronicsSim") << "Hit before trivial Shaper with rawId    : " << it->first.detid_
-            << ", row: " << static_cast<int>(it->first.row_)
-            << ", column: " << static_cast<int>(it->first.column_)
-            << ", time1L: " << toa1[0]
-            << ", time2L: " << toa2[0]
-            << ", chargeL: " << charge_adc[0]
-            << ", time1R: " << toa1[1]
-            << ", time2R: " << toa2[1]
-            << ", chargeR: " << charge_adc[1]
-            << std::endl;
+                                         << ", row: " << static_cast<int>(it->first.row_)
+                                         << ", column: " << static_cast<int>(it->first.column_)
+                                         << ", time1L: " << toa1[0] << ", time2L: " << toa2[0]
+                                         << ", chargeL: " << charge_adc[0] << ", time1R: " << toa1[1]
+                                         << ", time2R: " << toa2[1] << ", chargeR: " << charge_adc[1] << std::endl;
     }
-    
+
     // --- skip if both sides are empty
     if (charge_adc[0] == 0 && charge_adc[1] == 0)
       continue;
@@ -266,20 +262,25 @@ void BTLElectronicsSim::run(const mtd::MTDSimHitDataAccumulator& input,
       continue;
     }
 
-
     updateOutput(output, rawDataFrame);
-    updateOutputSoA(outputSoA, validHitIndex, it->first.detid_, charge_adc, toa1, toa2, it->first.column_, static_cast<uint16_t>(iBX));
+    updateOutputSoA(outputSoA,
+                    validHitIndex,
+                    it->first.detid_,
+                    charge_adc,
+                    toa1,
+                    toa2,
+                    it->first.column_,
+                    static_cast<uint16_t>(iBX));
     validHitIndex++;
   }  // MTDSimHitDataAccumulator loop
 
   // rezie the output SoA collection to the number of valid hits
-  auto queue = cms::alpakatools::host();
+  const auto& queue = cms::alpakatools::host();
   btldigi::BTLDigiHostCollection newOutputSoA(validHitIndex, queue);
   for (int idx = 0; idx < validHitIndex; ++idx) {
     newOutputSoA.view()[idx] = outputSoA.view()[idx];
   }
   outputSoA = std::move(newOutputSoA);
-
 }
 
 void BTLElectronicsSim::runTrivialShaper(BTLDataFrame& dataFrame,
@@ -339,91 +340,61 @@ void BTLElectronicsSim::updateOutput(BTLDigiCollection& coll, const BTLDataFrame
   coll.push_back(rawDataFrame);
 }
 
-void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll, 
-                     int hitIndex,
-                     uint32_t rawId,
-                     const float (&charge_adc)[2], 
-                     const float (&toa1)[2],
-                     const float (&toa2)[2],
-                     const uint8_t col,
-                     const uint16_t BC0count) const {
+void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll,
+                                        int hitIndex,
+                                        uint32_t rawId,
+                                        const float (&charge_adc)[2],
+                                        const float (&toa1)[2],
+                                        const float (&toa2)[2],
+                                        const uint8_t col,
+                                        const uint16_t BC0count) const {
+  bool status = true;    // status is always true in this implementation
+  uint32_t BCcount = 0;  // BCcount is always 0 in this implementation
+  uint8_t chIDL = static_cast<uint8_t>(elMap_.TOFHIRCh(static_cast<uint32_t>(rawId), static_cast<uint32_t>(0)));
+  uint16_t T1coarseL = timetoTcoarse(toa1[0], T1coarseMask);
+  uint16_t T2coarseL = timetoTcoarse(toa2[0], T2coarseMask);
+  uint16_t EOIcoarseL = T1coarseL + static_cast<uint16_t>(integrationTimeFixed_);
+  uint16_t ChargeL = chargetoQfine(charge_adc[0], toa1[0], EOIcoarseL);
+  uint16_t T1fineL = timetoTfine(toa1[0], T1coarseL);
+  uint16_t T2fineL = timetoTfine(toa2[0], T2coarseL);
+  uint16_t IdleTimeL = 0;  // IdleTimeL is not used in this implementation
+  uint8_t PrevTrigFL = 0;  // Previous trigger flag is not used in this implementation
+  uint8_t TACIDL = 0;      // TACIDL is not used in this implementation
 
-    
-    bool status = true; // status is always true in this implementation
-    uint32_t BCcount = 0; // BCcount is always 0 in this implementation
-    uint8_t chIDL = static_cast<uint8_t>(elMap_.TOFHIRCh(static_cast<uint32_t>(rawId), static_cast<uint32_t>(0)));
-    uint16_t T1coarseL = timetoTcoarse(toa1[0], T1coarseMask);
-    uint16_t T2coarseL = timetoTcoarse(toa2[0], T2coarseMask);
-    uint16_t EOIcoarseL = T1coarseL + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeL = chargetoQfine(charge_adc[0], toa1[0], EOIcoarseL);
-    uint16_t T1fineL = timetoTfine(toa1[0], T1coarseL);
-    uint16_t T2fineL = timetoTfine(toa2[0], T2coarseL);
-    uint16_t IdleTimeL = 0; // IdleTimeL is not used in this implementation
-    uint8_t PrevTrigFL = 0; // Previous trigger flag is not used in this implementation
-    uint8_t TACIDL = 0; // TACIDL is not used in this implementation
+  uint8_t chIDR = static_cast<uint8_t>(elMap_.TOFHIRCh(static_cast<uint32_t>(rawId), static_cast<uint32_t>(1)));
+  uint16_t T1coarseR = timetoTcoarse(toa1[1], T1coarseMask);
+  uint16_t T2coarseR = timetoTcoarse(toa2[1], T2coarseMask);
+  uint16_t EOIcoarseR = T1coarseR + static_cast<uint16_t>(integrationTimeFixed_);
+  uint16_t ChargeR = chargetoQfine(charge_adc[1], toa1[1], EOIcoarseR);
+  uint16_t T1fineR = timetoTfine(toa1[1], T1coarseR);
+  uint16_t T2fineR = timetoTfine(toa2[1], T2coarseR);
+  uint16_t IdleTimeR = 0;  // IdleTimeR is not used in this implementation
+  uint8_t PrevTrigFR = 0;  // Previous trigger flag is not used in this implementation
+  uint8_t TACIDR = 0;      // TACIDR is not used in this implementation
 
-    uint8_t chIDR = static_cast<uint8_t>(elMap_.TOFHIRCh( static_cast<uint32_t>(rawId), static_cast<uint32_t>(1)));
-    uint16_t T1coarseR = timetoTcoarse(toa1[1], T1coarseMask);
-    uint16_t T2coarseR = timetoTcoarse(toa2[1], T2coarseMask);
-    uint16_t EOIcoarseR = T1coarseR + static_cast<uint16_t>(integrationTimeFixed_);
-    uint16_t ChargeR = chargetoQfine(charge_adc[1], toa1[1], EOIcoarseR);
-    uint16_t T1fineR = timetoTfine(toa1[1], T1coarseR);
-    uint16_t T2fineR = timetoTfine(toa2[1], T2coarseR);
-    uint16_t IdleTimeR = 0; // IdleTimeR is not used in this implementation
-    uint8_t PrevTrigFR = 0; // Previous trigger flag is not used in this implementation
-    uint8_t TACIDR = 0; // TACIDR is not used in this implementation
+  coll.view()[hitIndex] = {rawId,     BC0count,   status,  BCcount,   chIDL,      T1coarseL, T2coarseL,  EOIcoarseL,
+                           ChargeL,   T1fineL,    T2fineL, IdleTimeL, PrevTrigFL, TACIDL,    chIDR,      T1coarseR,
+                           T2coarseR, EOIcoarseR, ChargeR, T1fineR,   T2fineR,    IdleTimeR, PrevTrigFR, TACIDR};
 
-    coll.view()[hitIndex] = {
-            rawId,
-            BC0count,
-            status,
-            BCcount,
-            chIDL,
-            T1coarseL,
-            T2coarseL,
-            EOIcoarseL,
-            ChargeL,
-            T1fineL,
-            T2fineL,
-            IdleTimeL,
-            PrevTrigFL,
-            TACIDL,
-            chIDR,
-            T1coarseR,
-            T2coarseR,
-            EOIcoarseR,
-            ChargeR,
-            T1fineR,
-            T2fineR,
-            IdleTimeR,
-            PrevTrigFR,
-            TACIDR
-    };
+  if (debug_) {
+    edm::LogError("BTLElectronicsSim") << "Processed hit with rawId: " << rawId
+                                       << ", chIDL: " << static_cast<int>(coll.view()[hitIndex].chIDL())
+                                       << ", T1coarseL: " << static_cast<int>(coll.view()[hitIndex].T1coarseL())
+                                       << ", T1fineL: " << coll.view()[hitIndex].T1fineL()
+                                       << ", T2coarseL: " << coll.view()[hitIndex].T2coarseL()
+                                       << ", T2fineL: " << coll.view()[hitIndex].T2fineL()
+                                       << ", EOIcoarseL: " << coll.view()[hitIndex].EOIcoarseL()
+                                       << ", ChargeL: " << coll.view()[hitIndex].ChargeL()
+                                       << ", chIDR: " << static_cast<int>(coll.view()[hitIndex].chIDR())
+                                       << ", T1coarseR: " << coll.view()[hitIndex].T1coarseR()
+                                       << ", T1fineR: " << coll.view()[hitIndex].T1fineR()
+                                       << ", T2coarseR: " << coll.view()[hitIndex].T2coarseR()
+                                       << ", T2fineR: " << coll.view()[hitIndex].T2fineR()
+                                       << ", EOIcoarseR: " << coll.view()[hitIndex].EOIcoarseR()
+                                       << ", ChargeR: " << coll.view()[hitIndex].ChargeR() << std::endl;
+  }
+}
 
-    if (debug_) {
-
-      // auto cell = output.view()[hitIndex]; // cell è di tipo element
-      edm::LogError("BTLElectronicsSim") << "Processed hit with rawId: " << rawId
-                << ", chIDL: "     << static_cast<int>(coll.view()[hitIndex].chIDL())
-                << ", T1coarseL: " << static_cast<int>(coll.view()[hitIndex].T1coarseL())
-                << ", T1fineL: "   << coll.view()[hitIndex].T1fineL()
-                << ", T2coarseL: " << coll.view()[hitIndex].T2coarseL()
-                << ", T2fineL: "   << coll.view()[hitIndex].T2fineL()
-                << ", EOIcoarseL: " << coll.view()[hitIndex].EOIcoarseL()
-                << ", ChargeL: "   << coll.view()[hitIndex].ChargeL()
-                << ", chIDR: "     << static_cast<int>(coll.view()[hitIndex].chIDR())
-                << ", T1coarseR: " << coll.view()[hitIndex].T1coarseR()
-                << ", T1fineR: "   << coll.view()[hitIndex].T1fineR()
-                << ", T2coarseR: " << coll.view()[hitIndex].T2coarseR()
-                << ", T2fineR: "   << coll.view()[hitIndex].T2fineR()
-                << ", EOIcoarseR: " << coll.view()[hitIndex].EOIcoarseR()
-                << ", ChargeR: "   << coll.view()[hitIndex].ChargeR()
-                << std::endl;
-    }
-
-} 
-
-  
 float BTLElectronicsSim::rearming_time(const float& hit_time, const float& hit_npe) const {
   // mode 1: the channel is rearmed after the falling edge of the trigger_B signal
   // mode 2: the channel is rearmed after n cycles of the TOFHiR clock
@@ -510,27 +481,27 @@ float BTLElectronicsSim::pulse_qRes(const float& npe) const {
 
 uint16_t BTLElectronicsSim::timetoTcoarse(const float time, const uint16_t mask) const {
   // Convert time to Tcoarse
-  float time_clk_units = time / tofhirClock_; // Convert time to clock units
+  float time_clk_units = time / tofhirClock_;  // Convert time to clock units
   uint16_t tcoarse = 0;
   if (time_clk_units - std::floor(time_clk_units) < 0.5) {
-    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 1) & mask; // Mask to keep only the lower 15 bits
-  }
-  else
-    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 2) & mask; // Mask to keep only the lower 15 bits
-  return tcoarse; // by design, Tcoarse is at least 1 clk cycle after the arrival of the signal
+    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 1) & mask;  // Mask to keep only the lower 15 bits
+  } else
+    tcoarse = static_cast<uint16_t>(std::floor(time_clk_units) + 2) & mask;  // Mask to keep only the lower 15 bits
+  return tcoarse;  // by design, Tcoarse is at least 1 clk cycle after the arrival of the signal
 }
 
 uint16_t BTLElectronicsSim::timetoTfine(const float time, const uint16_t tcoarse) const {
   // Convert time to Tfine
-  float time_clk_units = time / tofhirClock_; // Convert time to clock units
-  float qtfine =  tcoarse - time_clk_units - t0_; // Get the fine time part in clock units
-  uint16_t Tfine = static_cast<uint16_t>(std::floor(a2_ * qtfine * qtfine + a1_ * qtfine + a0_)); // convert into Tfine digits
+  float time_clk_units = time / tofhirClock_;     // Convert time to clock units
+  float qtfine = tcoarse - time_clk_units - t0_;  // Get the fine time part in clock units
+  uint16_t Tfine =
+      static_cast<uint16_t>(std::floor(a2_ * qtfine * qtfine + a1_ * qtfine + a0_));  // convert into Tfine digits
 
   if (Tfine > tdcBitSaturation_) {
     edm::LogWarning("BTLElectronicsSim") << "BTLElectronicsSim::timetoTfine: Tfine value " << Tfine
-                                             << " exceeds the maximum allowed value of " << tdcBitSaturation_
-                                             << ". Setting Tfine to the maximum allowed value.";
-    Tfine = tdcBitSaturation_; // Ensure Tfine does not exceed the maximum allowed value
+                                         << " exceeds the maximum allowed value of " << tdcBitSaturation_
+                                         << ". Setting Tfine to the maximum allowed value.";
+    Tfine = tdcBitSaturation_;  // Ensure Tfine does not exceed the maximum allowed value
   }
 
   return Tfine;
@@ -538,24 +509,16 @@ uint16_t BTLElectronicsSim::timetoTfine(const float time, const uint16_t tcoarse
 
 uint16_t BTLElectronicsSim::chargetoQfine(const float charge, const float time1, const float time2) const {
   // Convert charge to qfine
-  float ti = (time2 - time1) / tofhirClock_; // Time of signal integration in clock units
+  float ti = (time2 - time1) / tofhirClock_;  // Time of signal integration in clock units
 
   // evaluate pedestal (qdc calibs)
-  uint32_t pedestal = (
-            p0_
-            + p1_ * ti
-            + p2_ * ti * ti
-            + p3_ * ti * ti * ti
-            + p4_ * ti * ti * ti * ti
-            + p5_ * ti * ti * ti * ti * ti
-            + p6_ * ti * ti * ti * ti * ti * ti
-            + p7_ * ti * ti * ti * ti * ti * ti * ti
-            + p8_ * ti * ti * ti * ti * ti * ti * ti * ti
-            + p9_ * ti * ti * ti * ti * ti * ti * ti * ti * ti
-        );
+  uint32_t pedestal =
+      (p0_ + p1_ * ti + p2_ * ti * ti + p3_ * ti * ti * ti + p4_ * ti * ti * ti * ti + p5_ * ti * ti * ti * ti * ti +
+       p6_ * ti * ti * ti * ti * ti * ti + p7_ * ti * ti * ti * ti * ti * ti * ti +
+       p8_ * ti * ti * ti * ti * ti * ti * ti * ti + p9_ * ti * ti * ti * ti * ti * ti * ti * ti * ti);
 
   const uint32_t adc = std::min(static_cast<uint32_t>(std::floor(charge)), adcBitSaturation_);
-  uint16_t Qfine = adc + pedestal; // Qfine is the ADC value + pedestal
+  uint16_t Qfine = adc + pedestal;  // Qfine is the ADC value + pedestal
 
   // printf  ("charge: %f, ti: %f, pedestal: %u, adc: %u, Qfine: %u\n", charge, ti, pedestal, adc, Qfine);
   return Qfine;

@@ -5,9 +5,9 @@
 #include "DataFormats/Portable/interface/PortableHostCollection.h"
 
 namespace btldigi {
-  
+
   using BTLDigiHostCollection = PortableHostCollection<BTLDigiSoA>;
 
-} //namespace btldigi
+}  //namespace btldigi
 
 #endif  // DataFormats_FTLDigi_interface_BTLDigiCollection_h
