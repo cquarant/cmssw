@@ -35,7 +35,6 @@ namespace btldigi {
     using BTLDigiSoAView = BTLDigiSoA::View;
     using BTLDigiSoAConstView = BTLDigiSoA::ConstView;
 
-    // std::ostream& operator<<(std::ostream& out, BTLDigiSoA::View::element const& digi);
     std::ostream& operator<<(std::ostream& out, BTLDigiSoA::View::const_element const& digi);
 
 } // namespace btldigi
