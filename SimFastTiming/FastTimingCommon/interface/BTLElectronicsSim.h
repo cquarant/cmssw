@@ -87,7 +87,7 @@ private:
 
   uint16_t timetoTfine(float time, const uint16_t tcoarse) const;
 
-  uint16_t chargetoQfine(float charge, float time1, float time2) const;
+  uint16_t chargetoQfine(float charge, float toa1, uint16_t EOI) const;
 
   static constexpr float sqrt2_ = 1.41421356f;
 

@@ -507,9 +507,9 @@ uint16_t BTLElectronicsSim::timetoTfine(const float time, const uint16_t tcoarse
   return Tfine;
 }
 
-uint16_t BTLElectronicsSim::chargetoQfine(const float charge, const float time1, const float time2) const {
+uint16_t BTLElectronicsSim::chargetoQfine(const float charge, const float toa1, uint16_t EOI) const {
   // Convert charge to qfine
-  float ti = (time2 - time1) / tofhirClock_;  // Time of signal integration in clock units
+  float ti = (EOI - toa1 / tofhirClock_);  // integration time in clock units
 
   // evaluate pedestal (qdc calibs)
   uint32_t pedestal =
