@@ -187,6 +187,7 @@ namespace btldigi {
   ALPAKA_FN_HOST_ACC inline void setDigi(BTLDigiSoA::View &btlDigi,
                                          int32_t i,
                                          uint32_t rawId_val,
+                                         uint32_t BC0count_val,
                                          bool status_val,
                                          uint32_t BCcount_val,
                                          uint32_t chIDR_val,
@@ -212,6 +213,7 @@ namespace btldigi {
     btlDigi[i].rawId() = rawId_val;
     btlDigi[i].BC0count() = static_cast<uint16_t>(BC0count_val);
     btlDigi[i].status() = static_cast<bool>(status_val);
+    btlDigi[i].BCcount() = static_cast<uint16_t>(BCcount_val);
     btlDigi[i].chIDR() = static_cast<uint8_t>(chIDR_val);
     btlDigi[i].T1coarseR() = static_cast<uint16_t>(T1coarseR_val);
     btlDigi[i].T2coarseR() = static_cast<uint16_t>(T2coarseR_val);
