@@ -188,7 +188,7 @@ namespace btldigi {
                                          int32_t i,
                                          uint32_t rawId_val,
                                          uint32_t BC0count_val,
-                                         bool status_val,
+                                         uint32_t status_val,
                                          uint32_t BCcount_val,
                                          uint32_t chIDR_val,
                                          uint32_t T1coarseR_val,
