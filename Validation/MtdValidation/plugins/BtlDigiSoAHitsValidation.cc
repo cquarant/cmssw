@@ -141,7 +141,7 @@ void BtlDigiSoAHitsValidation::analyze(const edm::Event& iEvent, const edm::Even
     local_point = topo.pixelToModuleLocalPoint(local_point, detId.row(topo.nrows()), detId.column(topo.nrows()));
     const auto& global_point = thedet->toGlobal(local_point);
 
-    uint32_t adc[2] = { btldigi::chargeL(btlDigiView, i), btldigi::chargeR(btlDigiView, i) };
+    uint32_t adc[2] = {btldigi::chargeL(btlDigiView, i), btldigi::chargeR(btlDigiView, i)};
     uint32_t T1coarse[2] = {btldigi::t1CoarseL(btlDigiView, i), btldigi::t1CoarseR(btlDigiView, i)};
     uint32_t T2coarse[2] = {btldigi::t2CoarseL(btlDigiView, i), btldigi::t2CoarseR(btlDigiView, i)};
     uint32_t T1fine[2] = {btldigi::t1FineL(btlDigiView, i), btldigi::t1FineR(btlDigiView, i)};
