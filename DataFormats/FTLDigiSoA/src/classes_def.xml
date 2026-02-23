@@ -2,9 +2,7 @@
 
 <class name="btldigi::BTLDigiSoA"/>
 <class name="btldigi::BTLDigiSoA::View"/>
-<class name="btldigi::BTLDigiHostCollection" ClassVersion="3">
-   <version ClassVersion="3" checksum="3293790812"/>
-</class>
+<class name="btldigi::BTLDigiHostCollection"/>
 <class name="edm::Wrapper<btldigi::BTLDigiHostCollection>" splitLevel="0"/>
 
 </lcgdict>

@@ -7,8 +7,6 @@
 
  Description: BTL DIGI hits validation
 
- Implementation:
-     [Notes on implementation]
 */
 
 #include <string>
@@ -125,12 +123,12 @@ void BtlDigiSoAHitsValidation::analyze(const edm::Event& iEvent, const edm::Even
 
   auto btlDigiHitsHandle = makeValid(iEvent.getHandle(btlDigiHitsToken_));
 
-  // --- Loop over the BLT DIGI hits
+  // --- Loop over the BTL DIGI hits
 
   unsigned int n_digi_btl[2] = {0, 0};
-
-  for (int i = 0; i < btlDigiHitsHandle->view().metadata().size(); i++) {
-    BTLDetId detId = btlDigiHitsHandle->view()[i].rawId();
+  const auto btlDigiView = btlDigiHitsHandle->view();
+  for (int i = 0; i < btlDigiView.metadata().size(); i++) {
+    BTLDetId detId = btldigi::rawId(btlDigiView, i);
     DetId geoId = detId.geographicalId(MTDTopologyMode::crysLayoutFromTopoMode(topology->getMTDTopologyMode()));
     const MTDGeomDet* thedet = geom->idToDet(geoId);
     if (thedet == nullptr)
@@ -143,11 +141,11 @@ void BtlDigiSoAHitsValidation::analyze(const edm::Event& iEvent, const edm::Even
     local_point = topo.pixelToModuleLocalPoint(local_point, detId.row(topo.nrows()), detId.column(topo.nrows()));
     const auto& global_point = thedet->toGlobal(local_point);
 
-    uint32_t adc[2] = {btlDigiHitsHandle->view()[i].ChargeL(), btlDigiHitsHandle->view()[i].ChargeR()};
-    uint32_t T1coarse[2] = {btlDigiHitsHandle->view()[i].T1coarseL(), btlDigiHitsHandle->view()[i].T1coarseR()};
-    uint32_t T2coarse[2] = {btlDigiHitsHandle->view()[i].T2coarseL(), btlDigiHitsHandle->view()[i].T2coarseR()};
-    uint32_t T1fine[2] = {btlDigiHitsHandle->view()[i].T1fineL(), btlDigiHitsHandle->view()[i].T1fineR()};
-    uint32_t T2fine[2] = {btlDigiHitsHandle->view()[i].T2fineL(), btlDigiHitsHandle->view()[i].T2fineR()};
+    uint32_t adc[2] = { btldigi::chargeL(btlDigiView, i), btldigi::chargeR(btlDigiView, i) };
+    uint32_t T1coarse[2] = {btldigi::t1CoarseL(btlDigiView, i), btldigi::t1CoarseR(btlDigiView, i)};
+    uint32_t T2coarse[2] = {btldigi::t2CoarseL(btlDigiView, i), btldigi::t2CoarseR(btlDigiView, i)};
+    uint32_t T1fine[2] = {btldigi::t1FineL(btlDigiView, i), btldigi::t1FineR(btlDigiView, i)};
+    uint32_t T2fine[2] = {btldigi::t2FineL(btlDigiView, i), btldigi::t2FineR(btlDigiView, i)};
 
     for (int iside = 0; iside < 2; ++iside) {
       if (adc[iside] == 0)

@@ -1,7 +1,5 @@
 #include <ostream>
 
-#include <fmt/format.h>
-
 #include "DataFormats/FTLDigiSoA/interface/BTLDigiSoA.h"
 
 namespace btldigi {

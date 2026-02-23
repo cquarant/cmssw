@@ -43,71 +43,71 @@ namespace btldigi {
   ALPAKA_FN_HOST_ACC inline uint32_t rawId(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].rawId());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t BC0count(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t bc0Count(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].BC0count());
   }
   ALPAKA_FN_HOST_ACC inline bool status(const BTLDigiSoAConstView &btlDigi, int32_t i) { return (btlDigi[i].status()); }
-  ALPAKA_FN_HOST_ACC inline uint32_t BCcount(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint32_t bcCount(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].BCcount());
   }
   ALPAKA_FN_HOST_ACC inline uint8_t chIDR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].chIDR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T1coarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t1CoarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T1coarseR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T2coarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t2CoarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T2coarseR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t EOIcoarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t eoiCoarseR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].EOIcoarseR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t ChargeR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t chargeR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].ChargeR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T1fineR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t1FineR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T1fineR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T2fineR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t2FineR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T2fineR());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t IdleTimeR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t idleTimeR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].IdleTimeR());
   }
-  ALPAKA_FN_HOST_ACC inline uint8_t PrevTrigFR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint8_t prevTrigFR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].PrevTrigFR());
   }
-  ALPAKA_FN_HOST_ACC inline uint8_t TACIDR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint8_t tacIDR(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].TACIDR());
   }
   ALPAKA_FN_HOST_ACC inline uint8_t chIDL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].chIDL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T1coarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t1CoarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T1coarseL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T2coarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t2CoarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T2coarseL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t EOIcoarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t eoiCoarseL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].EOIcoarseL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t ChargeL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t chargeL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].ChargeL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T1fineL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t1FineL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T1fineL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t T2fineL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t t2FineL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].T2fineL());
   }
-  ALPAKA_FN_HOST_ACC inline uint16_t IdleTimeL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint16_t idleTimeL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].IdleTimeL());
   }
-  ALPAKA_FN_HOST_ACC inline uint8_t PrevTrigFL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint8_t prevTrigFL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].PrevTrigFL());
   }
-  ALPAKA_FN_HOST_ACC inline uint8_t TACIDL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
+  ALPAKA_FN_HOST_ACC inline uint8_t tacIDL(const BTLDigiSoAConstView &btlDigi, int32_t i) {
     return (btlDigi[i].TACIDL());
   }
 
@@ -115,125 +115,123 @@ namespace btldigi {
   ALPAKA_FN_HOST_ACC inline void rawId(BTLDigiSoA::View &btlDigi, int32_t i, uint32_t value) {
     btlDigi[i].rawId() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void BC0count(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void bc0Count(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].BC0count() = value;
   }
   ALPAKA_FN_HOST_ACC inline void status(BTLDigiSoA::View &btlDigi, int32_t i, bool value) {
     btlDigi[i].status() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void BCcount(BTLDigiSoA::View &btlDigi, int32_t i, uint32_t value) {
+  ALPAKA_FN_HOST_ACC inline void bcCount(BTLDigiSoA::View &btlDigi, int32_t i, uint32_t value) {
     btlDigi[i].BCcount() = value;
   }
   ALPAKA_FN_HOST_ACC inline void chIDR(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].chIDR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T1coarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t1CoarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T1coarseR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T2coarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t2CoarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T2coarseR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void EOIcoarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void eoiCoarseR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].EOIcoarseR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void ChargeR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void chargeR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].ChargeR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T1fineR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t1FineR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T1fineR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T2fineR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t2FineR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T2fineR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void IdleTimeR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void idleTimeR(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].IdleTimeR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void PrevTrigFR(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
+  ALPAKA_FN_HOST_ACC inline void prevTrigFR(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].PrevTrigFR() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void TACIDR(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
+  ALPAKA_FN_HOST_ACC inline void tacIDR(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].TACIDR() = value;
   }
   ALPAKA_FN_HOST_ACC inline void chIDL(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].chIDL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T1coarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t1CoarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T1coarseL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T2coarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t2CoarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T2coarseL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void EOIcoarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void eoiCoarseL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].EOIcoarseL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void ChargeL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void chargeL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].ChargeL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T1fineL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t1FineL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T1fineL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void T2fineL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void t2FineL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].T2fineL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void IdleTimeL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
+  ALPAKA_FN_HOST_ACC inline void idleTimeL(BTLDigiSoA::View &btlDigi, int32_t i, uint16_t value) {
     btlDigi[i].IdleTimeL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void PrevTrigFL(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
+  ALPAKA_FN_HOST_ACC inline void prevTrigFL(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].PrevTrigFL() = value;
   }
-  ALPAKA_FN_HOST_ACC inline void TACIDL(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
+  ALPAKA_FN_HOST_ACC inline void tacIDL(BTLDigiSoA::View &btlDigi, int32_t i, uint8_t value) {
     btlDigi[i].TACIDL() = value;
   }
   ALPAKA_FN_HOST_ACC inline void setDigi(BTLDigiSoA::View &btlDigi,
                                          int32_t i,
                                          uint32_t rawId_val,
-                                         uint16_t BC0count_val,
                                          bool status_val,
                                          uint32_t BCcount_val,
-                                         uint8_t chIDR_val,
-                                         uint16_t T1coarseR_val,
-                                         uint16_t T2coarseR_val,
-                                         uint16_t EOIcoarseR_val,
-                                         uint16_t ChargeR_val,
-                                         uint16_t T1fineR_val,
-                                         uint16_t T2fineR_val,
-                                         uint16_t IdleTimeR_val,
-                                         uint8_t PrevTrigFR_val,
-                                         uint8_t TACIDR_val,
-                                         uint8_t chIDL_val,
-                                         uint16_t T1coarseL_val,
-                                         uint16_t T2coarseL_val,
-                                         uint16_t EOIcoarseL_val,
-                                         uint16_t ChargeL_val,
-                                         uint16_t T1fineL_val,
-                                         uint16_t T2fineL_val,
-                                         uint16_t IdleTimeL_val,
-                                         uint8_t PrevTrigFL_val,
-                                         uint8_t TACIDL_val) {
+                                         uint32_t chIDR_val,
+                                         uint32_t T1coarseR_val,
+                                         uint32_t T2coarseR_val,
+                                         uint32_t EOIcoarseR_val,
+                                         uint32_t ChargeR_val,
+                                         uint32_t T1fineR_val,
+                                         uint32_t T2fineR_val,
+                                         uint32_t IdleTimeR_val,
+                                         uint32_t PrevTrigFR_val,
+                                         uint32_t TACIDR_val,
+                                         uint32_t chIDL_val,
+                                         uint32_t T1coarseL_val,
+                                         uint32_t T2coarseL_val,
+                                         uint32_t EOIcoarseL_val,
+                                         uint32_t ChargeL_val,
+                                         uint32_t T1fineL_val,
+                                         uint32_t T2fineL_val,
+                                         uint32_t IdleTimeL_val,
+                                         uint32_t PrevTrigFL_val,
+                                         uint32_t TACIDL_val) {
     btlDigi[i].rawId() = rawId_val;
-    btlDigi[i].BC0count() = BC0count_val;
-    btlDigi[i].status() = status_val;
-    btlDigi[i].BCcount() = BCcount_val;
-    btlDigi[i].chIDR() = chIDR_val;
-    btlDigi[i].T1coarseR() = T1coarseR_val;
-    btlDigi[i].T2coarseR() = T2coarseR_val;
-    btlDigi[i].EOIcoarseR() = EOIcoarseR_val;
-    btlDigi[i].ChargeR() = ChargeR_val;
-    btlDigi[i].T1fineR() = T1fineR_val;
-    btlDigi[i].T2fineR() = T2fineR_val;
-    btlDigi[i].IdleTimeR() = IdleTimeR_val;
-    btlDigi[i].PrevTrigFR() = PrevTrigFR_val;
-    btlDigi[i].TACIDR() = TACIDR_val;
-    btlDigi[i].chIDL() = chIDL_val;
-    btlDigi[i].T1coarseL() = T1coarseL_val;
-    btlDigi[i].T2coarseL() = T2coarseL_val;
-    btlDigi[i].EOIcoarseL() = EOIcoarseL_val;
-    btlDigi[i].ChargeL() = ChargeL_val;
-    btlDigi[i].T1fineL() = T1fineL_val;
-    btlDigi[i].T2fineL() = T2fineL_val;
-    btlDigi[i].IdleTimeL() = IdleTimeL_val;
-    btlDigi[i].PrevTrigFL() = PrevTrigFL_val;
-    btlDigi[i].TACIDL() = TACIDL_val;
+    btlDigi[i].BC0count() = static_cast<uint16_t>(BC0count_val);
+    btlDigi[i].status() = static_cast<bool>(status_val);
+    btlDigi[i].chIDR() = static_cast<uint8_t>(chIDR_val);
+    btlDigi[i].T1coarseR() = static_cast<uint16_t>(T1coarseR_val);
+    btlDigi[i].T2coarseR() = static_cast<uint16_t>(T2coarseR_val);
+    btlDigi[i].EOIcoarseR() = static_cast<uint16_t>(EOIcoarseR_val);
+    btlDigi[i].ChargeR() = static_cast<uint16_t>(ChargeR_val);
+    btlDigi[i].T1fineR() = static_cast<uint16_t>(T1fineR_val);
+    btlDigi[i].T2fineR() = static_cast<uint16_t>(T2fineR_val);
+    btlDigi[i].IdleTimeR() = static_cast<uint16_t>(IdleTimeR_val);
+    btlDigi[i].PrevTrigFR() = static_cast<uint8_t>(PrevTrigFR_val);
+    btlDigi[i].TACIDR() = static_cast<uint8_t>(TACIDR_val);
+    btlDigi[i].chIDL() = static_cast<uint8_t>(chIDL_val);
+    btlDigi[i].T1coarseL() = static_cast<uint16_t>(T1coarseL_val);
+    btlDigi[i].T2coarseL() = static_cast<uint16_t>(T2coarseL_val);
+    btlDigi[i].EOIcoarseL() = static_cast<uint16_t>(EOIcoarseL_val);
+    btlDigi[i].ChargeL() = static_cast<uint16_t>(ChargeL_val);
+    btlDigi[i].T1fineL() = static_cast<uint16_t>(T1fineL_val);
+    btlDigi[i].T2fineL() = static_cast<uint16_t>(T2fineL_val);
+    btlDigi[i].IdleTimeL() = static_cast<uint16_t>(IdleTimeL_val);
+    btlDigi[i].PrevTrigFL() = static_cast<uint8_t>(PrevTrigFL_val);
+    btlDigi[i].TACIDL() = static_cast<uint8_t>(TACIDL_val);
   }
 
 }  // namespace btldigi

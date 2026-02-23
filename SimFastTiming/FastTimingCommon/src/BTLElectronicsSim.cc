@@ -379,16 +379,6 @@ void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll,
                    BC0count,
                    status,
                    BCcount,
-                   chIDL,
-                   T1coarseL,
-                   T2coarseL,
-                   EOIcoarseL,
-                   ChargeL,
-                   T1fineL,
-                   T2fineL,
-                   IdleTimeL,
-                   PrevTrigFL,
-                   TACIDL,
                    chIDR,
                    T1coarseR,
                    T2coarseR,
@@ -398,24 +388,34 @@ void BTLElectronicsSim::updateOutputSoA(btldigi::BTLDigiHostCollection& coll,
                    T2fineR,
                    IdleTimeR,
                    PrevTrigFR,
-                   TACIDR);
+                   TACIDR,
+                   chIDL,
+                   T1coarseL,
+                   T2coarseL,
+                   EOIcoarseL,
+                   ChargeL,
+                   T1fineL,
+                   T2fineL,
+                   IdleTimeL,
+                   PrevTrigFL,
+                   TACIDL);
 
   if (debug_) {
     edm::LogError("BTLElectronicsSim") << "Processed hit with rawId NEW GETTER FUNCTIONS: " << rawId
                                        << ", chIDL: " << static_cast<int>(btldigi::chIDL(btlDigiView, hitIndex))
-                                       << ", T1coarseL: " << btldigi::T1coarseL(btlDigiView, hitIndex)
-                                       << ", T1fineL: " << btldigi::T1fineL(btlDigiView, hitIndex)
-                                       << ", T2coarseL: " << btldigi::T2coarseL(btlDigiView, hitIndex)
-                                       << ", T2fineL: " << btldigi::T2fineL(btlDigiView, hitIndex)
-                                       << ", EOIcoarseL: " << btldigi::EOIcoarseL(btlDigiView, hitIndex)
-                                       << ", ChargeL: " << btldigi::ChargeL(btlDigiView, hitIndex)
+                                       << ", T1coarseL: " << btldigi::t1CoarseL(btlDigiView, hitIndex)
+                                       << ", T1fineL: " << btldigi::t1FineL(btlDigiView, hitIndex)
+                                       << ", T2coarseL: " << btldigi::t2CoarseL(btlDigiView, hitIndex)
+                                       << ", T2fineL: " << btldigi::t2FineL(btlDigiView, hitIndex)
+                                       << ", EOIcoarseL: " << btldigi::eoiCoarseL(btlDigiView, hitIndex)
+                                       << ", ChargeL: " << btldigi::chargeL(btlDigiView, hitIndex)
                                        << ", chIDR: " << static_cast<int>(btldigi::chIDR(btlDigiView, hitIndex))
-                                       << ", T1coarseR: " << btldigi::T1coarseR(btlDigiView, hitIndex)
-                                       << ", T1fineR: " << btldigi::T1fineR(btlDigiView, hitIndex)
-                                       << ", T2coarseR: " << btldigi::T2coarseR(btlDigiView, hitIndex)
-                                       << ", T2fineR: " << btldigi::T2fineR(btlDigiView, hitIndex)
-                                       << ", EOIcoarseR: " << btldigi::EOIcoarseR(btlDigiView, hitIndex)
-                                       << ", ChargeR: " << btldigi::ChargeR(btlDigiView, hitIndex) << std::endl;
+                                       << ", T1coarseR: " << btldigi::t1CoarseR(btlDigiView, hitIndex)
+                                       << ", T1fineR: " << btldigi::t1FineR(btlDigiView, hitIndex)
+                                       << ", T2coarseR: " << btldigi::t2CoarseR(btlDigiView, hitIndex)
+                                       << ", T2fineR: " << btldigi::t2FineR(btlDigiView, hitIndex)
+                                       << ", EOIcoarseR: " << btldigi::eoiCoarseR(btlDigiView, hitIndex)
+                                       << ", ChargeR: " << btldigi::chargeR(btlDigiView, hitIndex) << std::endl;
   }
 }
 
