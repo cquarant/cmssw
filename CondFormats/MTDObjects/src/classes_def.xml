@@ -5,4 +5,5 @@
     <field name="detToElec_" mapping="blob" />
   </class>
   <class name="std::unordered_map<uint32_t, BTLElectronicsIdPair>"/>
+  <class name="BTLTDCCalibration" class_version="0" />
 </lcgdict>
