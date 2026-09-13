@@ -1,5 +1,6 @@
 #include "CondFormats/MTDObjects/interface/BTLElectronicsId.h"
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+#include "CondFormats/MTDObjects/interface/BTLTDCCalibration.h"
 
 namespace CondFormats_MTDObjects {
   struct dictionary {
@@ -7,5 +8,6 @@ namespace CondFormats_MTDObjects {
     BTLElectronicsIdPair electronicsIdPair;
     BTLReadoutMap readoutMap;
     std::unordered_map<unsigned int, BTLElectronicsIdPair> detToElec;
+    BTLTDCCalibration btlTDCCalibration;
   };
 }  // namespace CondFormats_MTDObjects
