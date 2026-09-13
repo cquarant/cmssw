@@ -26,6 +26,12 @@ public:
   static constexpr unsigned kHSLinkShift = 10;
   static constexpr unsigned kFEDShift = 17;
 
+  static constexpr uint32_t kNFEDs = 12;
+  static constexpr uint32_t kNHSLinks = 36;
+  static constexpr uint32_t kNELinks = 24;
+  static constexpr uint32_t kNChannels = 32;
+  static constexpr uint32_t kSize = kNFEDs * kNHSLinks * kNELinks * kNChannels;
+
   /** Default constructor **/
   BTLElectronicsId();
 
@@ -45,6 +51,13 @@ public:
   int channelId() const { return (rawid_ >> kChannelShift) & kChannelMask; }
 
   uint32_t rawId() const { return rawid_; };
+
+  // Returns a dense index in the range [0, kSize)
+  // useful for indexing of channels for storing/retrieving 
+  // calibration and conditions data
+  uint32_t denseIndex() const {
+    return (((fedId() * kNHSLinks + hsLinkId()) * kNELinks + eLinkId()) * kNChannels + channelId());
+  }
 
   bool operator==(const BTLElectronicsId&) const;
   bool operator!=(const BTLElectronicsId&) const;
