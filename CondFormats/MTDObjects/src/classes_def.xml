@@ -5,5 +5,14 @@
     <field name="detToElec_" mapping="blob" />
   </class>
   <class name="std::unordered_map<uint32_t, BTLElectronicsIdPair>"/>
-  <class name="BTLTDCCalibration" class_version="0" />
+
+  <class name="BTLTDCChannelCalib"/>
+  <class name="BTLTDCCrystalCalib"/>
+  <class name="std::map<uint32_t,BTLTDCCrystalCalib>"/>
+  <class name="MTDContainer<BTLDetId,BTLTDCCrystalCalib>"/>
+  <class name="MTDCondObjectContainer<BTLTDCCrystalCalib>">
+    <field name = "btl_" mapping = "blob"/>
+    <field name = "etl_" mapping = "blob"/>
+  </class>
+
 </lcgdict>

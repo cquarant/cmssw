@@ -56,13 +56,6 @@ public:
   /** True if all fields are within the BTL DAQ ranges and the HS-link belongs to this FED **/
   bool isValid() const;
 
-  // Returns a dense index in the range [0, kSize)
-  // useful for indexing of channels for storing/retrieving 
-  // calibration and conditions data
-  uint32_t denseIndex() const {
-    return (((fedId() * kNHSLinks + hsLinkId()) * kNELinks + eLinkId()) * kNChannels + channelId());
-  }
-
   bool operator==(const BTLElectronicsId&) const;
   bool operator!=(const BTLElectronicsId&) const;
 
