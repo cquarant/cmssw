@@ -1,0 +1,11 @@
+<library file="*.cc" name="MTDTrivialCalibsWritePlugins">
+<use name="CondCore/DBOutputService"/>
+<use name="CondFormats/MTDObjects"/>
+<use name="CondFormats/DataRecord"/>
+<use name="FWCore/Framework"/>
+<use name="FWCore/MessageLogger"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/ServiceRegistry"/>
+<use name="FWCore/Utilities"/>
+<flags EDM_PLUGIN="1"/>
+</library>

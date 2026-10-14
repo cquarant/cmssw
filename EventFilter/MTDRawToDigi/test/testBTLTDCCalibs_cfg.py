@@ -17,15 +17,15 @@ process.maxEvents = cms.untracked.PSet(
 )
 
 # ----------------------------------------------------------------------
-# Give BTLTDCCalibrationRcd a valid IOV.
+# Give BTLTDCCalibsRcd a valid IOV.
 #
 # Our Record is an independent EventSetupRecordImplementation, therefore
 # something has to define its interval of validity.
 # ----------------------------------------------------------------------
 
-process.btlTDCCalibrationRcd = cms.ESSource(
+process.btlTDCCalibsRcd = cms.ESSource(
     "EmptyESSource",
-    recordName = cms.string("BTLTDCCalibrationRcd"),
+    recordName = cms.string("BTLTDCCalibsRcd"),
     firstValid = cms.vuint32(1),
     iovIsRunNotTime = cms.bool(True)
 )
@@ -34,8 +34,8 @@ process.btlTDCCalibrationRcd = cms.ESSource(
 # Dummy TDC calibration producer
 # ----------------------------------------------------------------------
 
-process.btlTDCCalibrationESProducer = cms.ESProducer(
-    "BTLTDCCalibrationESProducer",
+process.btlTDCCalibsESProducer = cms.ESProducer(
+    "BTLTDCCalibsESProducer",
 
     t0 = cms.double(-0.048343264),
     a0 = cms.double(57.244545),
@@ -47,10 +47,10 @@ process.btlTDCCalibrationESProducer = cms.ESProducer(
 # Analyzer that reads the calibration from EventSetup
 # ----------------------------------------------------------------------
 
-process.btlTDCCalibrationTest = cms.EDAnalyzer(
-    "BTLTDCCalibrationTest"
+process.btlTDCCalibsTest = cms.EDAnalyzer(
+    "BTLTDCCalibsTest"
 )
 
 process.p = cms.Path(
-    process.btlTDCCalibrationTest
+    process.btlTDCCalibsTest
 )

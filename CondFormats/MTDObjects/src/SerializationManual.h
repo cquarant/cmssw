@@ -1,0 +1,1 @@
+COND_SERIALIZATION_INSTANTIATE(MTDCondObjectContainer<BTLTDCCrystalCalib>);
