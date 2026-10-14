@@ -52,13 +52,6 @@ public:
 
   uint32_t rawId() const { return rawid_; };
 
-  // Returns a dense index in the range [0, kSize)
-  // useful for indexing of channels for storing/retrieving 
-  // calibration and conditions data
-  uint32_t denseIndex() const {
-    return (((fedId() * kNHSLinks + hsLinkId()) * kNELinks + eLinkId()) * kNChannels + channelId());
-  }
-
   bool operator==(const BTLElectronicsId&) const;
   bool operator!=(const BTLElectronicsId&) const;
 
