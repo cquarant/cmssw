@@ -12,3 +12,4 @@
 //     BTLTDCCalibs btlTDCCalibs;
 //   };
 // }  // namespace CondFormats_MTDObjects
+#include "CondFormats/MTDObjects/interface/BTLTDChannelCCalibs.h"

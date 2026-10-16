@@ -15,4 +15,11 @@
     <field name = "etl_" mapping = "blob"/>
   </class>
 
+  <class name="BTLTDChannelCCalib"/>
+  <class name="std::map<uint32_t,BTLTDChannelCCalib>"/>
+  <class name="MTDContainer<BTLElectronicsId,BTLTDChannelCCalib>"/>
+  <class name="BTLChannelCondObjectContainer<BTLTDChannelCCalib>">
+    <field name="btlchs_" mapping="blob"/>
+  </class>
+
 </lcgdict>
