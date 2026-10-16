@@ -2,7 +2,6 @@
 
 #include "DataFormats/ForwardDetId/interface/BTLDetId.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ParameterSet/interface/FileInPath.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
@@ -26,46 +25,48 @@ BTLTDCCrystalCalib makeTDCCrystalCalibration(double t0, double a0, double a1, do
 }
 
 MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::ParameterSet& ps) {
+  auto cc = setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCCalibs);
+
+  geomToken_ = cc.consumes();
+  topoToken_ = cc.consumes();
+
   btltdc_t0_ = ps.getUntrackedParameter<double>("btltdc_t0", 200.);
   btltdc_a0_ = ps.getUntrackedParameter<double>("btltdc_a0", 200.);
   btltdc_a1_ = ps.getUntrackedParameter<double>("btltdc_a1", 200.);
   btltdc_a2_ = ps.getUntrackedParameter<double>("btltdc_a2", 200.);
-
-
   
-  setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCCalibs);
   findingRecord<BTLTDCCalibsRcd>();
 }
-
-// MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(double t0, double a0, double a1, double a2) {
-  //   setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCCalibs);
-  //   findingRecord<BTLTDCCalibsRcd>();
-  // }
   
-  std::unique_ptr<BTLTDCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCCalibs(const BTLTDCCalibsRcd&) {
-      
+  std::unique_ptr<BTLTDCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCCalibs(const BTLTDCCalibsRcd& tdcRecord) {
+
+  const auto& geom = tdcRecord.get(geomToken_);
+  const auto& topo = tdcRecord.get(topoToken_);
+  auto btlCrysLayout = MTDTopologyMode::crysLayoutFromTopoMode(topo.getMTDTopologyMode());
+
   auto tdc_singleXtal = makeTDCCrystalCalibration(btltdc_t0_,btltdc_a0_,btltdc_a1_,btltdc_a2_);
 
   auto tdc_calibs = std::make_unique<BTLTDCCalibs>();
 
-  // Generate geometrical crystal IDs in the BTL v4 numbering convention.
-  // IMPORTANT: these loops describe the nominal v4 ID grid, NOT an enumeration
-  // driven by the geometry record. Adapt if your geometry/ID scheme differs.
-  // zside: 0(-z) / 1(+z), rod: 1..HALF_ROD;
-  // readout units, detector modules, sensor modules and crystals: zero-based.
-  for (unsigned zside = 0; zside < 2; ++zside) {
-    for (unsigned rod = 1; rod <= BTLDetId::HALF_ROD; ++rod) {
-      for (unsigned ru = 0; ru < BTLDetId::kRUPerRod; ++ru) {
-        for (unsigned dm = 0; dm < BTLDetId::kDModulesPerRU; ++dm) {
-          for (unsigned sm = 0; sm < BTLDetId::kSModulesPerDM; ++sm) {
-            for (unsigned crystal = 0; crystal < BTLDetId::kCrystalsPerModuleV2; ++crystal) {
-              const BTLDetId id(zside, rod, ru, dm, sm, crystal);
-              // Use the typed-ID overload. The rawId classifier is still TODO.
-              tdc_calibs->setValue(id, tdc_singleXtal);
-            }
-          }
-        }
-      }
+  // -- Readout map defined only for CrysLayout::v4 - If not v4, returns empty map
+  if (static_cast<int>(btlCrysLayout) < static_cast<int>(BTLDetId::CrysLayout::v4)) {
+    throw cms::Exception("MyFatalError")
+      << "Trivial conditions retriever not available for BTL crystal layout " << static_cast<int>(btlCrysLayout)
+      << ", use layout 7 (v4) or later!" << std::endl;
+  }
+
+  // -- Loop over geometry
+  for (const auto& det : geom.detUnits()) {
+    BTLDetId modId = BTLDetId(det->geographicalId().rawId());  // this is the sensor module ID
+    // -- Select BTL only
+
+    if (modId.mtdSubDetector() != MTDDetId::BTL)
+      continue;
+
+    // -- Loop over crystals in a sensor module
+    for (uint iCrystal = 0; iCrystal < BTLDetId::kCrystalsPerModuleV2; iCrystal++) {
+      BTLDetId btlId(modId.mtdSide(), modId.mtdRR(), modId.runit(), modId.dmodule(), modId.smodule(), iCrystal);
+      tdc_calibs->setValue(btlId, tdc_singleXtal);
     }
   }
 

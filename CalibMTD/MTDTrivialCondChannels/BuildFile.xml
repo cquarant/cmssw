@@ -5,4 +5,7 @@
 <use name="CondFormats/MTDObjects"/>
 <use name="CondFormats/DataRecord"/>
 <use name="DataFormats/ForwardDetId"/>
+<use name="Geometry/Records"/>
+<use name="Geometry/MTDGeometryBuilder"/>
+<use name="Geometry/MTDCommonData"/>
 <export><lib name="1"/></export>

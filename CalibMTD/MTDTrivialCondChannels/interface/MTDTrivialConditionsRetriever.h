@@ -1,10 +1,20 @@
 #ifndef CalibMTD_MTDTrivialCondChannels_MTDTrivialConditionsRetriever_h
 #define CalibMTD_MTDTrivialCondChannels_MTDTrivialConditionsRetriever_h
 
+#include "FWCore/Framework/interface/ESProducer.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include "FWCore/Framework/interface/EventSetupRecordInfiniteIntervalFinder.h"
+
 #include "CondFormats/DataRecord/interface/BTLTDCCalibsRcd.h"
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibs.h"
-#include "FWCore/Framework/interface/ESProducer.h"
-#include "FWCore/Framework/interface/EventSetupRecordInfiniteIntervalFinder.h"
+
+#include "Geometry/MTDGeometryBuilder/interface/MTDGeometry.h"
+#include "Geometry/Records/interface/MTDGeometryRecord.h"
+#include "Geometry/Records/interface/MTDDigiGeometryRecord.h"
+
+#include "Geometry/MTDCommonData/interface/MTDTopologyMode.h"
+#include "Geometry/MTDGeometryBuilder/interface/MTDTopology.h"
+#include "Geometry/Records/interface/MTDTopologyRcd.h"
 
 #include <memory>
 
@@ -19,6 +29,9 @@ public:
 
   std::unique_ptr<BTLTDCCalibs> produceBTLTDCCalibs(const BTLTDCCalibsRcd&);
 private:
+
+  edm::ESGetToken<MTDGeometry, MTDDigiGeometryRecord> geomToken_;
+  edm::ESGetToken<MTDTopology, MTDTopologyRcd> topoToken_;
 
   // tdc calibration (fitted function parameters)
   double btltdc_t0_;
