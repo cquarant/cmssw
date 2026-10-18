@@ -7,9 +7,9 @@
 
 #include "CondFormats/DataRecord/interface/BTLTDCCalibsRcd.h"
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibs.h"
-#include "CondFormats/DataRecord/interface/BTLTDChannelCCalibsRcd.h"
+#include "CondFormats/DataRecord/interface/BTLTDCEleChannelCalibsRcd.h"
 #include "CondFormats/DataRecord/interface/BTLReadoutMapRcd.h"
-#include "CondFormats/MTDObjects/interface/BTLTDChannelCCalibs.h"
+#include "CondFormats/MTDObjects/interface/BTLTDCEleChannelCalibs.h"
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
 
 #include "Geometry/MTDGeometryBuilder/interface/MTDGeometry.h"
@@ -32,7 +32,7 @@ public:
   ~MTDTrivialConditionsRetriever() override = default;
 
   std::unique_ptr<BTLTDCCalibs> produceBTLTDCCalibs(const BTLTDCCalibsRcd&);
-  std::unique_ptr<BTLTDChannelCCalibs> produceBTLTDCChannelCalibs(const BTLTDChannelCCalibsRcd&);
+  std::unique_ptr<BTLTDCEleChannelCalibs> produceBTLTDCEleChannelCalibs(const BTLTDCEleChannelCalibsRcd&);
 private:
 
   edm::ESGetToken<MTDGeometry, MTDDigiGeometryRecord> geomToken_;

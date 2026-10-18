@@ -26,12 +26,6 @@ public:
   static constexpr unsigned kHSLinkShift = 10;
   static constexpr unsigned kFEDShift = 17;
 
-  static constexpr uint32_t kNFEDs = 12;
-  static constexpr uint32_t kNHSLinks = 36;
-  static constexpr uint32_t kNELinks = 24;
-  static constexpr uint32_t kNChannels = 32;
-  static constexpr uint32_t kSize = kNFEDs * kNHSLinks * kNELinks * kNChannels;
-
   /** Default constructor **/
   BTLElectronicsId();
 

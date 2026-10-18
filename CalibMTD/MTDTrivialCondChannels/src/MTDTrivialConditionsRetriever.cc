@@ -30,7 +30,7 @@ MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::Paramete
   geomToken_ = cc.consumes();
   topoToken_ = cc.consumes();
 
-  auto channelCC = setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCChannelCalibs);
+  auto channelCC = setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCEleChannelCalibs);
   channelGeomToken_ = channelCC.consumes();
   channelTopoToken_ = channelCC.consumes();
   readoutMapToken_ = channelCC.consumes();
@@ -41,7 +41,7 @@ MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::Paramete
   btltdc_a2_ = ps.getUntrackedParameter<double>("btltdc_a2", 200.);
   
   findingRecord<BTLTDCCalibsRcd>();
-  findingRecord<BTLTDChannelCCalibsRcd>();
+  findingRecord<BTLTDCEleChannelCalibsRcd>();
 }
   
   std::unique_ptr<BTLTDCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCCalibs(const BTLTDCCalibsRcd& tdcRecord) {
@@ -82,8 +82,8 @@ MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::Paramete
   return tdc_calibs;
 }
 
-std::unique_ptr<BTLTDChannelCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCChannelCalibs(
-    const BTLTDChannelCCalibsRcd& tdcRecord) {
+std::unique_ptr<BTLTDCEleChannelCalibs> MTDTrivialConditionsRetriever::produceBTLTDCEleChannelCalibs(
+    const BTLTDCEleChannelCalibsRcd& tdcRecord) {
   const auto& geom = tdcRecord.get(channelGeomToken_);
   const auto& topo = tdcRecord.get(channelTopoToken_);
   const auto btlCrysLayout = MTDTopologyMode::crysLayoutFromTopoMode(topo.getMTDTopologyMode());
@@ -95,13 +95,13 @@ std::unique_ptr<BTLTDChannelCCalibs> MTDTrivialConditionsRetriever::produceBTLTD
   }
 
   const auto& readoutMap = tdcRecord.get(readoutMapToken_);
-  BTLTDChannelCCalib channelCalib{};
+  BTLTDCEleChannelCalib channelCalib{};
   channelCalib.t0.fill(btltdc_t0_);
   channelCalib.a0.fill(btltdc_a0_);
   channelCalib.a1.fill(btltdc_a1_);
   channelCalib.a2.fill(btltdc_a2_);
 
-  auto tdcCalibs = std::make_unique<BTLTDChannelCCalibs>();
+  auto tdcCalibs = std::make_unique<BTLTDCEleChannelCalibs>();
   for (const auto& det : geom.detUnits()) {
     const BTLDetId modId(det->geographicalId().rawId());
     if (modId.mtdSubDetector() != MTDDetId::BTL)
