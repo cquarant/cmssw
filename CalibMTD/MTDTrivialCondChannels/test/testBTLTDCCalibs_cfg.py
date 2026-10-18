@@ -26,8 +26,28 @@ process.check = cms.EDAnalyzer(
     "EventSetupRecordDataGetter",
     toGet=cms.VPSet(
         cms.PSet(record=cms.string("BTLTDCCalibsRcd"), data=cms.vstring("BTLTDCCalibs")),
-        cms.PSet(record=cms.string("BTLTDChannelCCalibsRcd"), data=cms.vstring("BTLTDChannelCCalibs")),
+        cms.PSet(record=cms.string("BTLTDCEleChannelCalibsRcd"), data=cms.vstring("BTLTDCEleChannelCalibs")),
     ),
     verbose=cms.untracked.bool(True),
 )
-process.p = cms.Path(process.check)
+# Store both EventSetup payloads in the same SQLite conditions database.
+process.load("CondCore.CondDB.CondDB_cfi")
+process.CondDB.connect = cms.string("sqlite_file:BTLTDCCalibs_trivial.db")
+process.PoolDBOutputService = cms.Service(
+    "PoolDBOutputService",
+    process.CondDB,
+    timetype=cms.untracked.string("runnumber"),
+    toPut=cms.VPSet(
+        cms.PSet(
+            record=cms.string("BTLTDCCalibsRcd"),
+            tag=cms.string("BTLTDCCalibs_trivial_v1"),
+        ),
+        cms.PSet(
+            record=cms.string("BTLTDCEleChannelCalibsRcd"),
+            tag=cms.string("BTLTDCEleChannelCalibs_trivial_v1"),
+        ),
+    ),
+)
+process.writeCrystals = cms.EDAnalyzer("BTLTDCCalibsWriter")
+process.writeChannels = cms.EDAnalyzer("BTLTDCEleChannelCalibsWriter")
+process.p = cms.Path(process.check + process.writeCrystals + process.writeChannels)

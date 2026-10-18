@@ -5,6 +5,7 @@
 
 #include "CondFormats/MTDObjects/interface/BTLElectronicsId.h"
 #include "CondFormats/MTDObjects/interface/MTDContainer.h"
+#include "EventFilter/MTDRawToDigi/interface/BTLElectronicsSpecs.h"
 
 #include <cstddef>
 #include <cstdint>
@@ -58,13 +59,14 @@ private:
       throw std::invalid_argument("BTLChannelCondObjectContainer: the two most significant bits must be zero");
     }
     const BTLElectronicsId id(rawId);
-    if (static_cast<uint32_t>(id.channelId()) >= BTLElectronicsId::kNChannels) {
+    if (static_cast<uint32_t>(id.channelId()) >= BTLDetId::kCrystalsPerModuleV2 * 2) {
       throw std::invalid_argument("BTLChannelCondObjectContainer: channelId is out of range");
     }
-    if (static_cast<uint32_t>(id.eLinkId()) >= BTLElectronicsId::kNELinks) {
+    if (static_cast<uint32_t>(id.eLinkId()) >= BTLDetId::kDModulesPerRU * BTLDetId::kSModulesPerDM) {
       throw std::invalid_argument("BTLChannelCondObjectContainer: eLinkId is out of range");
     }
-    if (static_cast<uint32_t>(id.hsLinkId()) >= BTLElectronicsId::kNHSLinks) {
+    if (static_cast<uint32_t>(id.hsLinkId()) < BTLElectronicsSpecs::kHSLinksOffset || 
+        static_cast<uint32_t>(id.hsLinkId()) >= BTLElectronicsSpecs::kHSLinksOffset + BTLElectronicsSpecs::kHSLinksNum) {
       throw std::invalid_argument("BTLChannelCondObjectContainer: hsLinkId is out of range");
     }
     return id;
