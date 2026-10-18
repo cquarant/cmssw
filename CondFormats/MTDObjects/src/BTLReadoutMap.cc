@@ -4,6 +4,7 @@
 
 #include <stdexcept>
 #include <ostream>
+#include <iostream>
 
 BTLReadoutMap::BTLReadoutMap() {}
 
@@ -44,6 +45,15 @@ void BTLReadoutMap::add(const BTLDetId& detId, const BTLElectronicsIdPair& elecI
     throw cms::Exception("BTLReadoutMap::add()") << "Duplicate BTLDetId entry" << std::endl;
   }
 
+  if (detId.crystal() == 0){
+    std::cout << "BTLDetId: rawId=" << detId.rawId() << ", zside=" << detId.zside() << ", rod=" << detId.mtdRR()
+              << ", runit=" << detId.runit() << ", module=" << detId.module() << ", crystal=" << detId.crystal() << std::endl;
+
+    std::cout << "  minus: channelId=" << elecIds.minus.channelId() << ", eLinkId=" << elecIds.minus.eLinkId()
+              << ", hsLinkId=" << elecIds.minus.hsLinkId() << ", fedID=" << elecIds.minus.fedId() << std::endl;
+    std::cout << "  plus:  channelId=" << elecIds.plus.channelId() << ", eLinkId=" << elecIds.plus.eLinkId()
+              << ", hsLinkId=" << elecIds.plus.hsLinkId() << ", fedID=" << elecIds.plus.fedId() << std::endl;
+  }
   detToElec_[detKey] = elecIds;
 
   // ----------------------------
@@ -63,6 +73,8 @@ void BTLReadoutMap::add(const BTLDetId& detId, const BTLElectronicsIdPair& elecI
     throw cms::Exception("BTLReadoutMap::add()") << "Duplicate BTLElectronicsId entry (plus side): " << elecIds.plus;
   }
   elecToDet_[plusKey] = detKey;
+
+  
 }
 
 // ------------------------------------------------------------
