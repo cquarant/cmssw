@@ -2,16 +2,11 @@
 
 #include "DataFormats/ForwardDetId/interface/BTLDetId.h"
 #include "FWCore/MessageLogger/interface/MessageLogger.h"
-#include "FWCore/ParameterSet/interface/FileInPath.h"
 #include "FWCore/Utilities/interface/Exception.h"
 
-#include <cmath>
 #include <cstddef>
-#include <fstream>
-#include <sstream>
 #include <string>
 #include <memory>
-#include <limits>
 
 BTLTDCCrystalCalib makeTDCCrystalCalibration(double t0, double a0, double a1, double a2) {
   BTLTDCCrystalCalib crystal{};

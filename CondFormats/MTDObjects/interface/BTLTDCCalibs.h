@@ -31,11 +31,11 @@ struct BTLTDCCrystalCalib {
 
     std::array<BTLTDCChannelCalib, kNReadoutSides> channels{};
 
-    BTLTDCChannelCalib& at(std::size_t side, std::size_t tac) {
+    BTLTDCChannelCalib& at(std::size_t side) {
         return channels.at(side);
     }
 
-    const BTLTDCChannelCalib& at(std::size_t side, std::size_t tac) const {
+    const BTLTDCChannelCalib& at(std::size_t side) const {
         return channels.at(side);
     }
 

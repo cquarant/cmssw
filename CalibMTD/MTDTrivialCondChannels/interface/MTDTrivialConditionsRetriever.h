@@ -47,8 +47,6 @@ private:
   double btltdc_a0_;
   double btltdc_a1_;
   double btltdc_a2_;
-  
-  const BTLTDCCrystalCalib calibration_;
 };
 
 #endif  // CalibMTD_MTDTrivialCondChannels_MTDTrivialConditionsRetriever_h
