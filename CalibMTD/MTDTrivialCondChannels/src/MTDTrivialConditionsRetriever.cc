@@ -30,12 +30,18 @@ MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::Paramete
   geomToken_ = cc.consumes();
   topoToken_ = cc.consumes();
 
+  auto channelCC = setWhatProduced(this, &MTDTrivialConditionsRetriever::produceBTLTDCChannelCalibs);
+  channelGeomToken_ = channelCC.consumes();
+  channelTopoToken_ = channelCC.consumes();
+  readoutMapToken_ = channelCC.consumes();
+
   btltdc_t0_ = ps.getUntrackedParameter<double>("btltdc_t0", 200.);
   btltdc_a0_ = ps.getUntrackedParameter<double>("btltdc_a0", 200.);
   btltdc_a1_ = ps.getUntrackedParameter<double>("btltdc_a1", 200.);
   btltdc_a2_ = ps.getUntrackedParameter<double>("btltdc_a2", 200.);
   
   findingRecord<BTLTDCCalibsRcd>();
+  findingRecord<BTLTDChannelCCalibsRcd>();
 }
   
   std::unique_ptr<BTLTDCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCCalibs(const BTLTDCCalibsRcd& tdcRecord) {
@@ -74,4 +80,43 @@ MTDTrivialConditionsRetriever::MTDTrivialConditionsRetriever(const edm::Paramete
       << "Created trivial BTL TDC conditions for " << tdc_calibs->btlItems().size()
       << " BTL crystal IDs, two readout sides and eight TACs per side";
   return tdc_calibs;
+}
+
+std::unique_ptr<BTLTDChannelCCalibs> MTDTrivialConditionsRetriever::produceBTLTDCChannelCalibs(
+    const BTLTDChannelCCalibsRcd& tdcRecord) {
+  const auto& geom = tdcRecord.get(channelGeomToken_);
+  const auto& topo = tdcRecord.get(channelTopoToken_);
+  const auto btlCrysLayout = MTDTopologyMode::crysLayoutFromTopoMode(topo.getMTDTopologyMode());
+
+  if (static_cast<int>(btlCrysLayout) < static_cast<int>(BTLDetId::CrysLayout::v4)) {
+    throw cms::Exception("MyFatalError")
+        << "Trivial conditions retriever not available for BTL crystal layout " << static_cast<int>(btlCrysLayout)
+        << ", use layout 7 (v4) or later!" << std::endl;
+  }
+
+  const auto& readoutMap = tdcRecord.get(readoutMapToken_);
+  BTLTDChannelCCalib channelCalib{};
+  channelCalib.t0.fill(btltdc_t0_);
+  channelCalib.a0.fill(btltdc_a0_);
+  channelCalib.a1.fill(btltdc_a1_);
+  channelCalib.a2.fill(btltdc_a2_);
+
+  auto tdcCalibs = std::make_unique<BTLTDChannelCCalibs>();
+  for (const auto& det : geom.detUnits()) {
+    const BTLDetId modId(det->geographicalId().rawId());
+    if (modId.mtdSubDetector() != MTDDetId::BTL)
+      continue;
+
+    for (unsigned int iCrystal = 0; iCrystal < BTLDetId::kCrystalsPerModuleV2; ++iCrystal) {
+      const BTLDetId btlId(modId.mtdSide(), modId.mtdRR(), modId.runit(), modId.dmodule(), modId.smodule(), iCrystal);
+      const auto electronicsIds = readoutMap.getElectronicsId(btlId);
+      tdcCalibs->setValue(electronicsIds.minus.rawId(), channelCalib);
+      tdcCalibs->setValue(electronicsIds.plus.rawId(), channelCalib);
+    }
+  }
+
+  edm::LogInfo("MTDTrivialConditionsRetriever")
+      << "Created trivial BTL TDC conditions for " << tdcCalibs->size()
+      << " electronic channel IDs, eight TACs per channel";
+  return tdcCalibs;
 }
