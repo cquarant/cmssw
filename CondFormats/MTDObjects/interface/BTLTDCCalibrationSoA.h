@@ -15,7 +15,7 @@ namespace btl {
   // Reconstructed time = (coarse - t0 - q) * clockPeriod; the consumer
   // chooses the physical inverse branch and the output time unit.
   // These coefficients describe the fine-time response, not time walk.
-  // Row i corresponds to BTLReadoutMap::channelRawIds()[i].
+  // Row index is BTLElectronicsId::denseChannelIndex(), over the full BTL range.
   // valid is an eight-bit mask: bit t marks the calibration of TAC t.
   GENERATE_SOA_LAYOUT(BTLTDCCalibrationSoALayout,
                       SOA_COLUMN(uint32_t, rawId),

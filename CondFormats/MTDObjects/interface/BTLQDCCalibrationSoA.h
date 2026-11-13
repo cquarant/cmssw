@@ -13,7 +13,7 @@ namespace btl {
   // where ti = EOIcoarse - time/clockPeriod is in clock units.
   // Subtract this pedestal from Qfine before converting charge to energy.
   // Gain / ADC-to-energy conversion is a separate calibration.
-  // Row i corresponds to BTLReadoutMap::channelRawIds()[i].
+  // Row index is BTLElectronicsId::denseChannelIndex(), over the full BTL range.
   // valid is an eight-bit mask: bit t marks the calibration of TAC t.
   GENERATE_SOA_LAYOUT(BTLQDCCalibrationSoALayout,
                       SOA_COLUMN(uint32_t, rawId),

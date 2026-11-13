@@ -30,5 +30,5 @@ process.btlTrivialCalibrationSource.p6 = 11.0
 process.btlTrivialCalibrationSource.p7 = 12.0
 process.btlTrivialCalibrationSource.p8 = 13.0
 process.btlTrivialCalibrationSource.p9 = 14.0
-process.check = cms.EDAnalyzer("BTLCalibrationSoACheck")
+process.check = cms.EDAnalyzer("BTLCalibrationSoACheck", expected=cms.vdouble(*range(1, 15)), complete=cms.bool(False))
 process.p = cms.Path(process.check)

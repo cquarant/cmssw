@@ -1,4 +1,7 @@
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+#include "CondFormats/MTDObjects/interface/BTLElectronicsIndexing.h"
+#include "FWCore/ParameterSet/interface/ParameterSet.h"
+#include <vector>
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibrationHost.h"
 #include "CondFormats/MTDObjects/interface/BTLQDCCalibrationHost.h"
 #include "CondFormats/DataRecord/interface/BTLTDCCalibrationRcd.h"
@@ -16,8 +19,8 @@ public:
   explicit BTLCalibrationTestMap(const edm::ParameterSet&) { setWhatProduced(this); }
   std::unique_ptr<BTLReadoutMap> produce(const BTLReadoutMapRcd&) {
     auto map = std::make_unique<BTLReadoutMap>();
-    map->add(BTLDetId(2), {BTLElectronicsId(1, 75, 23, 31), BTLElectronicsId(1, 75, 23, 0)});
-    map->add(BTLDetId(1), {BTLElectronicsId(0, 4, 0, 20), BTLElectronicsId(0, 4, 0, 3)});
+    map->add(BTLDetId(2), {BTLElectronicsId(143, 35, 23, 31), BTLElectronicsId(143, 35, 23, 0)});
+    map->add(BTLDetId(1), {BTLElectronicsId(0, 0, 0, 20), BTLElectronicsId(0, 0, 0, 0)});
     map->initialize();
     return map;
   }
@@ -25,33 +28,53 @@ public:
 
 class BTLCalibrationSoACheck : public edm::one::EDAnalyzer<> {
 public:
-  explicit BTLCalibrationSoACheck(const edm::ParameterSet&)
-      : tdc_(esConsumes()), qdc_(esConsumes()), map_(esConsumes()) {}
+  explicit BTLCalibrationSoACheck(const edm::ParameterSet& config)
+      : tdc_(esConsumes()),
+        qdc_(esConsumes()),
+        map_(esConsumes()),
+        expected_(config.getParameter<std::vector<double>>("expected")),
+        complete_(config.getParameter<bool>("complete")) {
+    check(expected_.size() == 14);
+  }
   void analyze(const edm::Event&, const edm::EventSetup& setup) override {
     const auto tdc = setup.getData(tdc_).const_view();
     const auto qdc = setup.getData(qdc_).const_view();
-    const auto& ids = setup.getData(map_).channelRawIds();
-    check(static_cast<std::size_t>(tdc.metadata().size()) == ids.size() &&
-          static_cast<std::size_t>(qdc.metadata().size()) == ids.size());
-    for (uint32_t i = 0; i < ids.size(); ++i) {
-      check(tdc[i].rawId() == ids[i] && qdc[i].rawId() == ids[i]);
-      check(tdc[i].valid() == 0xff && qdc[i].valid() == 0xff);
-      for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-        check(tdc[i].t0()(tac) == 1.f);
-        check(tdc[i].a0()(tac) == 2.f);
-        check(tdc[i].a1()(tac) == 3.f);
-        check(tdc[i].a2()(tac) == 4.f);
-        check(qdc[i].p0()(tac) == 5.f);
-        check(qdc[i].p1()(tac) == 6.f);
-        check(qdc[i].p2()(tac) == 7.f);
-        check(qdc[i].p3()(tac) == 8.f);
-        check(qdc[i].p4()(tac) == 9.f);
-        check(qdc[i].p5()(tac) == 10.f);
-        check(qdc[i].p6()(tac) == 11.f);
-        check(qdc[i].p7()(tac) == 12.f);
-        check(qdc[i].p8()(tac) == 13.f);
-        check(qdc[i].p9()(tac) == 14.f);
+    const auto& map = setup.getData(map_);
+    check(tdc.metadata().size() == BTLElectronicsIndexing::kNumberOfChannels &&
+          qdc.metadata().size() == BTLElectronicsIndexing::kNumberOfChannels);
+    std::vector<bool> occupied(BTLElectronicsIndexing::kNumberOfChannels, false);
+    if (complete_)
+      check(map.checkDenseChannelIndex());
+    for (const auto& detId : map.getListOfDetIds()) {
+      const auto pair = map.getElectronicsId(detId);
+      for (const auto& id : {pair.minus, pair.plus}) {
+        check(id.isValid());
+        const auto i = id.denseChannelIndex();
+        check(!occupied[i]);
+        occupied[i] = true;
+        check(map.getDetId(id) == detId);
+        check(tdc[i].rawId() == id.rawId() && qdc[i].rawId() == id.rawId());
+        check(tdc[i].valid() == 0xff && qdc[i].valid() == 0xff);
+        for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
+          check(tdc[i].t0()(tac) == static_cast<float>(expected_[0]));
+          check(tdc[i].a0()(tac) == static_cast<float>(expected_[1]));
+          check(tdc[i].a1()(tac) == static_cast<float>(expected_[2]));
+          check(tdc[i].a2()(tac) == static_cast<float>(expected_[3]));
+          check(qdc[i].p0()(tac) == static_cast<float>(expected_[4]));
+          check(qdc[i].p1()(tac) == static_cast<float>(expected_[5]));
+          check(qdc[i].p2()(tac) == static_cast<float>(expected_[6]));
+          check(qdc[i].p3()(tac) == static_cast<float>(expected_[7]));
+          check(qdc[i].p4()(tac) == static_cast<float>(expected_[8]));
+          check(qdc[i].p5()(tac) == static_cast<float>(expected_[9]));
+          check(qdc[i].p6()(tac) == static_cast<float>(expected_[10]));
+          check(qdc[i].p7()(tac) == static_cast<float>(expected_[11]));
+          check(qdc[i].p8()(tac) == static_cast<float>(expected_[12]));
+          check(qdc[i].p9()(tac) == static_cast<float>(expected_[13]));
+        }
       }
+    }
+    for (int i = 0; i < BTLElectronicsIndexing::kNumberOfChannels; ++i) {
+      check(occupied[i] || (!complete_ && tdc[i].valid() == 0 && qdc[i].valid() == 0));
     }
   }
 
@@ -63,6 +86,8 @@ private:
   edm::ESGetToken<btl::BTLTDCCalibrationHost, BTLTDCCalibrationRcd> tdc_;
   edm::ESGetToken<btl::BTLQDCCalibrationHost, BTLQDCCalibrationRcd> qdc_;
   edm::ESGetToken<BTLReadoutMap, BTLReadoutMapRcd> map_;
+  std::vector<double> expected_;
+  bool complete_;
 };
 DEFINE_FWK_EVENTSETUP_MODULE(BTLCalibrationTestMap);
 DEFINE_FWK_MODULE(BTLCalibrationSoACheck);

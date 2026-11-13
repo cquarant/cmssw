@@ -13,43 +13,59 @@ side of a crystal. Every calibration coefficient is an Eigen vector of eight
 floats, addressed by the TAC ID. `SOA_EIGEN_COLUMN` stores a component across
 channels contiguously, as in `HGCalCalibParamSoA`.
 
-The row index is `BTLReadoutMap::denseChannelIndex(electronicsId)`. After filling
-a readout map, call `initialize()` before publishing it through EventSetup.
-`channelRawIds()` contains the sorted electronics IDs; its size is the number
-of rows to allocate in **both** collections. Populate each row's `rawId` with
-the corresponding entry. A missing channel throws instead of returning row 0.
-Adding channels or clearing the map invalidates the index until initialization.
+The DAQ encoding and mapping follow
+[`mm_BTLReadoutMap_20261029`](https://github.com/martinamalberti/cmssw/tree/mm_BTLReadoutMap_20261029):
+HS-links 0..35 (six-bit field), e-links 0..23, TOFHIR channels 0..31,
+and 144 FEDs, with 12 FEDs per Serenity and three HS-links per FED.
+The FED field starts at bit 16. The shared specifications now live in
+`CondFormats/MTDObjects/interface/BTLElectronicsSpecs.h`; the former EventFilter
+header forwards to this one.
 
-This is the rank of each raw ID among the mapped channels, not the packed raw
-ID itself. It is independent of insertion order and contains no holes, including
-for partial detector maps. The current branch uses HS links 4..75 and a
-seven-bit HS field, whereas the reference branch uses HS links 0..35, different
-FED partitioning and a six-bit field. Ranking the actual map preserves existing
-serialized electronics IDs. It deliberately does not import the incompatible
-arithmetic formula from that branch.
+The row index is **`BTLElectronicsId::denseChannelIndex()`**, using the reference
+`BTLElectronicsIndexing` arithmetic:
 
-The lookup is a host operation (`lower_bound`, O(log N)). Resolve it before a
-kernel and pass the dense index to the device, or provide a device readout-map
-lookup in the raw-to-digi stage. A kernel uses `view[channelIndex]` directly;
-it must not call `BTLReadoutMap`. Indices are only meaningful for the matching
-readout-map IOV. The new calibration records depend on `BTLReadoutMapRcd` so
-that a map change invalidates derived calibration products. An ESProducer must
-also propagate the calibration source IOVs into its output record.
+```text
+serenity = (fedId - kFirstFEDId) / nFEDsPerSerenity
+index = ((serenity * 36 + hsLinkId) * 24 + eLinkId) * 32 + channelId
+```
+
+Both collections allocate `BTLElectronicsIndexing::kNumberOfChannels` = 331776
+rows. The index is independent of map insertion order and map completeness;
+it is not the rank of an ID in a partial map. The full detector covers
+0..331775 exactly once. `BTLReadoutMap::checkDenseChannelIndex()` checks that
+coverage and increasing raw IDs. `getListOfDetIds()` enumerates mapped crystals.
+For partial maps, rows for missing channels remain zero with `valid == 0`.
+A valid electronics ID with raw ID zero is distinguished by its validity mask.
+
+Validate host IDs with `isValid()` before indexing: the arithmetic function
+assumes a valid FED/HS-link assignment. Host code can use
+`BTLElectronicsId::denseChannelIndex()` directly. The plain constexpr helper
+`BTLElectronicsIndexing::denseChannelIndex(fed, hs, el, channel)` implements the
+same arithmetic for code that already has the four fields. Kernels can consume
+the resulting index and access `view[index]` without a map search.
+
+`BTLReadoutMap::initialize()` rebuilds the transient reverse map; the arithmetic
+index itself needs no initialization. The calibration records still depend on
+`BTLReadoutMapRcd`: changing which channels are mapped invalidates the derived
+collections. A future producer of measured calibrations must also propagate
+its source IOVs.
+
+The raw-ID encoding differs from the former seven-bit HS-link format. Existing
+readout-map and electronics-keyed calibration payloads made with that old
+encoding must be regenerated; they cannot be interpreted as the new format.
 
 `valid` is a per-TAC bit mask, independent for TDC and QDC: bit `t` is set only
 when TAC `t` has a calibration. Allocation does not initialize the collection;
-producers should call `zeroInitialise()` and then fill coefficients, raw IDs,
-and valid bits explicitly. Zero coefficients are not usable dummy calibrations.
+producers call `zeroInitialise()` and then fill coefficients, raw IDs and
+valid bits. Zero coefficients alone are not usable dummy calibrations.
 
 ```cpp
-map.initialize();  // while building the map, before publishing it
-btl::BTLTDCCalibrationHost tdc(cms::alpakatools::host(), map.channelRawIds().size());
+btl::BTLTDCCalibrationHost tdc(cms::alpakatools::host(),
+                              BTLElectronicsIndexing::kNumberOfChannels);
 tdc.zeroInitialise();
-for (uint32_t i = 0; i < map.channelRawIds().size(); ++i) {
-  tdc.view()[i].rawId() = map.channelRawIds()[i];
-}
-// For a measured coefficient set, with 0 <= tac < 8:
-const auto i = map.denseChannelIndex(electronicsId);
+// For a validated, mapped electronicsId and 0 <= tac < 8:
+const auto i = electronicsId.denseChannelIndex();
+tdc.view()[i].rawId() = electronicsId.rawId();
 tdc.view()[i].t0()(tac) = measuredT0;
 tdc.view()[i].a0()(tac) = measuredA0;
 tdc.view()[i].a1()(tac) = measuredA1;
@@ -106,7 +122,7 @@ adapter. The existing persistent payloads and their readers remain available.
 `BTLTrivialCalibrationSource` in `CalibMTD/MTDTrivialCondChannels` produces both
 host collections directly, without a CondObjectContainer or detector-geometry
 loop. Each coefficient is configurable and repeated across all mapped channels
-and eight TACs; every TAC is marked valid. The default coefficients match the
+and eight TACs; every mapped TAC is marked valid. Unmapped rows remain invalid. The default coefficients match the
 referenced electronics simulation. TDC and QDC have separate records and
 consume the same readout map. No DB writer or simulation consumer is supplied.
 
@@ -123,8 +139,8 @@ process.btlTrivialCalibrationSource.p0 = 49.542229
 
 All parameters are tracked doubles (`t0`, `a0`..`a2`, `p0`..`p9`), stored as
 floats. Nonfinite values, including overflow on conversion to float, are
-rejected. `BTLReadoutMapESProducer` initializes the dense index before publishing
-the map. DB-loaded maps must likewise have their transient index initialized.
+rejected. `BTLReadoutMapESProducer` initializes the transient reverse map before
+publishing it. DB-loaded maps likewise need `initialize()` for reverse lookups.
 
 Run a geometry-independent framework test with a sparse electronics map:
 
@@ -138,23 +154,27 @@ These examples only request EventSetup products; they do not write SQLite files.
 
 ## Validation
 
-`testBTLCalibrationSoA` checks ordering, dense indices for sparse channel sets,
-insertion-order independence, missing channels, cache invalidation, rejected
-duplicate insertions, and independent SoA storage across channels and TACs.
+`testBTLCalibrationSoA` exhaustively checks all 331776 valid electronics IDs,
+round-trip field decoding, consecutive dense indices and increasing raw IDs,
+plus invalid FED/HS-link assignments and range boundaries. It also checks
+sparse-map addressing at the first and last rows, independent storage across
+channels/TACs, zero validity in holes, reverse lookups and atomic duplicate
+rejection.
 
-Verified in a temporary `CMSSW_20_1_0_pre5` area because the original nightly
-release is no longer available on CVMFS: package builds for `MTDObjects` and
-`DataRecord` (including CUDA and ROCm type registrations), dictionary version
-and transient checks, and execution of `testBTLCalibrationSoA` all passed.
-GPU kernels were not executed.
+`testBTLTrivialCalibrationSoA` requests both products over two events with a
+sparse map and checks all 14 configurable coefficients, raw IDs and validity
+bits at their hardware indices. The full-geometry example additionally checks
+complete coverage and every coefficient for all 331776 channels using the real
+`BTLReadoutMapESProducer`.
 
-`testBTLTrivialCalibrationSoA` requests both products through EventSetup over two
-events and checks all 14 configured coefficients, raw IDs and validity bits
-for every sparse-map channel and TAC. The source/plugin builds and sparse-map
-framework test passed in `CMSSW_20_1_0_pre5` (`el9_amd64_gcc14`); `cmsRun` had to
-run outside the filesystem sandbox because it crashed during startup inside it.
-The full-geometry example also passed, requesting both host products using
-the real `BTLReadoutMapESProducer` (Run4D127 geometry in this release).
+Verified in a temporary `CMSSW_20_1_0_pre5` area (`el9_amd64_gcc14`) because
+the original nightly is no longer available on CVMFS: the updated packages built
+successfully (including CUDA/ROCm type registrations and dictionary checks),
+the exhaustive indexing/storage test passed, and both sparse-map and
+full-geometry EventSetup tests passed. The full-geometry test used Run4D127
+and checked every channel at its arithmetic dense index. GPU kernels were not
+executed. Framework tests ran outside the filesystem sandbox because `cmsRun`
+crashes during startup inside it.
 
 ## References
 

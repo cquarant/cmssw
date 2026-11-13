@@ -16,8 +16,6 @@ BTLReadoutMap::~BTLReadoutMap() {}
 // Initialize - to build inverse map which is not stored persistently
 // ------------------------------------------------------------------
 void BTLReadoutMap::initialize() {
-  denseIndexInitialized_ = false;
-  channelRawIds_.clear();
   elecToDet_.clear();
 
   for (const auto& entry : detToElec_) {
@@ -34,29 +32,6 @@ void BTLReadoutMap::initialize() {
       throw cms::Exception("BTLReadoutMap::initialize()") << "Duplicate BTLElectronicsId (plus side)" << std::endl;
     }
   }
-
-  channelRawIds_.reserve(elecToDet_.size());
-  for (const auto& entry : elecToDet_) {
-    channelRawIds_.push_back(entry.first);
-  }
-  std::sort(channelRawIds_.begin(), channelRawIds_.end());
-  denseIndexInitialized_ = true;
-}
-
-const std::vector<uint32_t>& BTLReadoutMap::channelRawIds() const {
-  if (!denseIndexInitialized_) {
-    throw cms::Exception("BTLReadoutMap") << "Call initialize() before accessing the dense channel index";
-  }
-  return channelRawIds_;
-}
-
-uint32_t BTLReadoutMap::denseChannelIndex(const BTLElectronicsId& elecId) const {
-  const auto& ids = channelRawIds();
-  const auto it = std::lower_bound(ids.begin(), ids.end(), elecId.rawId());
-  if (it == ids.end() || *it != elecId.rawId()) {
-    throw cms::Exception("BTLReadoutMap") << "Electronics channel " << elecId.rawId() << " not found";
-  }
-  return static_cast<uint32_t>(it - ids.begin());
 }
 
 // ------------------------------------------------------------
@@ -87,9 +62,7 @@ void BTLReadoutMap::add(const BTLDetId& detId, const BTLElectronicsIdPair& elecI
   if (plusKey == minusKey || elecToDet_.find(plusKey) != elecToDet_.end()) {
     throw cms::Exception("BTLReadoutMap::add()") << "Duplicate BTLElectronicsId entry (plus side): " << elecIds.plus;
   }
-  // Validate the complete pair before changing either map or the dense index.
-  denseIndexInitialized_ = false;
-  channelRawIds_.clear();
+  // Validate both sides before changing either map.
   detToElec_[detKey] = elecIds;
   elecToDet_[minusKey] = detKey;
   elecToDet_[plusKey] = detKey;
@@ -125,8 +98,6 @@ BTLDetId BTLReadoutMap::getDetId(const BTLElectronicsId& elecId) const {
 // clear
 // ------------------------------------------------------------
 void BTLReadoutMap::clear() {
-  denseIndexInitialized_ = false;
-  channelRawIds_.clear();
   detToElec_.clear();
   elecToDet_.clear();
 }

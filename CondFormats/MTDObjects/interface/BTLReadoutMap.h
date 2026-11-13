@@ -64,9 +64,6 @@ private:
   // reverse mapping (packed electronics key -> detid)
   std::unordered_map<uint32_t, uint32_t> elecToDet_ COND_TRANSIENT;
 
-  std::vector<uint32_t> channelRawIds_ COND_TRANSIENT;
-  bool denseIndexInitialized_ COND_TRANSIENT = false;
-
   COND_SERIALIZABLE;
 };
 

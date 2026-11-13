@@ -2,6 +2,7 @@
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibrationHost.h"
 #include "CondFormats/MTDObjects/interface/BTLQDCCalibrationHost.h"
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+#include "CondFormats/MTDObjects/interface/BTLElectronicsIndexing.h"
 #include "CondFormats/DataRecord/interface/BTLTDCCalibrationRcd.h"
 #include "CondFormats/DataRecord/interface/BTLQDCCalibrationRcd.h"
 #include "FWCore/Framework/interface/ESProducer.h"
@@ -62,39 +63,53 @@ public:
   }
 
   std::unique_ptr<btl::BTLTDCCalibrationHost> produceTDC(const BTLTDCCalibrationRcd& record) {
-    const auto& ids = record.get(tdcMap_).channelRawIds();
-    auto result = std::make_unique<btl::BTLTDCCalibrationHost>(cms::alpakatools::host(), ids.size());
+    const auto& map = record.get(tdcMap_);
+    auto result = std::make_unique<btl::BTLTDCCalibrationHost>(cms::alpakatools::host(),
+                                                               BTLElectronicsIndexing::kNumberOfChannels);
     result->zeroInitialise();
     auto view = result->view();
-    for (uint32_t i = 0; i < ids.size(); ++i) {
-      view[i].rawId() = ids[i];
-      view[i].valid() = 0xff;
-      view[i].t0().setConstant(coefficients_[0]);
-      view[i].a0().setConstant(coefficients_[1]);
-      view[i].a1().setConstant(coefficients_[2]);
-      view[i].a2().setConstant(coefficients_[3]);
+    for (const auto& detId : map.getListOfDetIds()) {
+      const auto pair = map.getElectronicsId(detId);
+      for (const auto& id : {pair.minus, pair.plus}) {
+        if (!id.isValid())
+          throw cms::Exception("InvalidBTLElectronicsId") << id;
+        const auto i = id.denseChannelIndex();
+        view[i].rawId() = id.rawId();
+        view[i].valid() = 0xff;
+        view[i].t0().setConstant(coefficients_[0]);
+        view[i].a0().setConstant(coefficients_[1]);
+        view[i].a1().setConstant(coefficients_[2]);
+        view[i].a2().setConstant(coefficients_[3]);
+      }
     }
     return result;
   }
 
   std::unique_ptr<btl::BTLQDCCalibrationHost> produceQDC(const BTLQDCCalibrationRcd& record) {
-    const auto& ids = record.get(qdcMap_).channelRawIds();
-    auto result = std::make_unique<btl::BTLQDCCalibrationHost>(cms::alpakatools::host(), ids.size());
+    const auto& map = record.get(qdcMap_);
+    auto result = std::make_unique<btl::BTLQDCCalibrationHost>(cms::alpakatools::host(),
+                                                               BTLElectronicsIndexing::kNumberOfChannels);
     result->zeroInitialise();
     auto view = result->view();
-    for (uint32_t i = 0; i < ids.size(); ++i) {
-      view[i].rawId() = ids[i];
-      view[i].valid() = 0xff;
-      view[i].p0().setConstant(coefficients_[4]);
-      view[i].p1().setConstant(coefficients_[5]);
-      view[i].p2().setConstant(coefficients_[6]);
-      view[i].p3().setConstant(coefficients_[7]);
-      view[i].p4().setConstant(coefficients_[8]);
-      view[i].p5().setConstant(coefficients_[9]);
-      view[i].p6().setConstant(coefficients_[10]);
-      view[i].p7().setConstant(coefficients_[11]);
-      view[i].p8().setConstant(coefficients_[12]);
-      view[i].p9().setConstant(coefficients_[13]);
+    for (const auto& detId : map.getListOfDetIds()) {
+      const auto pair = map.getElectronicsId(detId);
+      for (const auto& id : {pair.minus, pair.plus}) {
+        if (!id.isValid())
+          throw cms::Exception("InvalidBTLElectronicsId") << id;
+        const auto i = id.denseChannelIndex();
+        view[i].rawId() = id.rawId();
+        view[i].valid() = 0xff;
+        view[i].p0().setConstant(coefficients_[4]);
+        view[i].p1().setConstant(coefficients_[5]);
+        view[i].p2().setConstant(coefficients_[6]);
+        view[i].p3().setConstant(coefficients_[7]);
+        view[i].p4().setConstant(coefficients_[8]);
+        view[i].p5().setConstant(coefficients_[9]);
+        view[i].p6().setConstant(coefficients_[10]);
+        view[i].p7().setConstant(coefficients_[11]);
+        view[i].p8().setConstant(coefficients_[12]);
+        view[i].p9().setConstant(coefficients_[13]);
+      }
     }
     return result;
   }

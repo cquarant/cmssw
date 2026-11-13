@@ -1,4 +1,5 @@
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+#include "CondFormats/MTDObjects/interface/BTLElectronicsIndexing.h"
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibrationHost.h"
 #include "CondFormats/MTDObjects/interface/BTLQDCCalibrationHost.h"
 #include "FWCore/Utilities/interface/Exception.h"
@@ -29,65 +30,87 @@ namespace {
 }  // namespace
 
 int main() {
-  // Deliberately sparse IDs and reverse insertion order: the index must
-  // depend only on the channel set, not unordered_map iteration order.
+  // Exhaustively verify that the reference DAQ assignment covers 0..331775
+  // exactly once, in raw-ID order, including FED and Serenity boundaries.
+  uint32_t next = 0, previousRawId = 0;
+  for (int serenity = 0; serenity < 12; ++serenity) {
+    for (int hs = 0; hs < 36; ++hs) {
+      const int fed = serenity * 12 + hs / 3;
+      for (int el = 0; el < 24; ++el) {
+        for (int ch = 0; ch < 32; ++ch) {
+          const BTLElectronicsId id(fed, hs, el, ch);
+          require(id.isValid());
+          require(id.fedId() == fed && id.hsLinkId() == hs && id.eLinkId() == el && id.channelId() == ch);
+          require(id.denseChannelIndex() == next);
+          require(next == 0 || previousRawId < id.rawId());
+          previousRawId = id.rawId();
+          ++next;
+        }
+      }
+    }
+  }
+  require(next == BTLElectronicsIndexing::kNumberOfChannels);
+  require(!BTLElectronicsId(0, 3, 0, 0).isValid());  // HS-link belongs to FED 1
+  require(!BTLElectronicsId(12, 35, 0, 0).isValid());
+  require(!BTLElectronicsId(144, 0, 0, 0).isValid());
+  require(!BTLElectronicsId(0, 36, 0, 0).isValid());
+  require(!BTLElectronicsId(0, 0, 24, 0).isValid());
+
+  // A sparse map must not renumber channels when entries are inserted or removed.
   BTLReadoutMap map;
-  const BTLElectronicsId a(0, 4, 0, 3), b(0, 4, 0, 20);
-  const BTLElectronicsId c(1, 75, 23, 0), d(1, 75, 23, 31);
+  const BTLElectronicsId a(0, 0, 0, 0), b(0, 0, 0, 20);
+  const BTLElectronicsId c(143, 35, 23, 0), d(143, 35, 23, 31);
   map.add(BTLDetId(2), {d, c});
   map.add(BTLDetId(1), {b, a});
-  requireException([&] { map.denseChannelIndex(a); });
   map.initialize();
   const std::vector<uint32_t> expected{a.rawId(), b.rawId(), c.rawId(), d.rawId()};
-  require(map.channelRawIds() == expected);
-  for (uint32_t i = 0; i < expected.size(); ++i) {
-    require(map.denseChannelIndex(BTLElectronicsId(expected[i])) == i);
+  require(a.denseChannelIndex() == 0 && b.denseChannelIndex() == 20);
+  require(c.denseChannelIndex() == 331744 && d.denseChannelIndex() == 331775);
+  for (auto rawId : expected) {
+    const BTLElectronicsId id(rawId);
+    const auto detId = map.getDetId(id);
+    const auto pair = map.getElectronicsId(detId);
+    require(pair.minus == id || pair.plus == id);
   }
-  requireException([&] { map.denseChannelIndex(BTLElectronicsId(0)); });
-  map.initialize();
-  require(map.channelRawIds() == expected);
+  requireException([&] { map.getDetId(BTLElectronicsId(0, 0, 0, 1)); });
 
-  BTLReadoutMap reordered;
-  reordered.add(BTLDetId(1), {b, a});
-  reordered.add(BTLDetId(2), {d, c});
-  reordered.initialize();
-  require(reordered.channelRawIds() == expected);
-
-  btl::BTLTDCCalibrationHost tdc(cms::alpakatools::host(), expected.size());
-  btl::BTLQDCCalibrationHost qdc(cms::alpakatools::host(), expected.size());
+  btl::BTLTDCCalibrationHost tdc(cms::alpakatools::host(), BTLElectronicsIndexing::kNumberOfChannels);
+  btl::BTLQDCCalibrationHost qdc(cms::alpakatools::host(), BTLElectronicsIndexing::kNumberOfChannels);
   tdc.zeroInitialise();
   qdc.zeroInitialise();
-  for (uint32_t i = 0; i < expected.size(); ++i) {
-    tdc.view()[i].rawId() = expected[i];
-    qdc.view()[i].rawId() = expected[i];
+  for (auto rawId : expected) {
+    const auto i = BTLElectronicsId(rawId).denseChannelIndex();
+    tdc.view()[i].rawId() = rawId;
+    qdc.view()[i].rawId() = rawId;
     // Fill each TAC and channel with distinct values, including p9.
     for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-      tdc.view()[i].a1()(tac) = 100 * i + tac + 1;
-      qdc.view()[i].p9()(tac) = 100 * i + tac + 2;
+      tdc.view()[i].a1()(tac) = i + 0.125f * tac + 1;
+      qdc.view()[i].p9()(tac) = i + 0.125f * tac + 2;
     }
     tdc.view()[i].valid() = 0xff;
     qdc.view()[i].valid() = 0x01;
   }
   const auto& tdcView = tdc.const_view();
   const auto& qdcView = qdc.const_view();
-  for (uint32_t i = 0; i < expected.size(); ++i) {
-    require(tdcView[i].rawId() == expected[i] && qdcView[i].rawId() == expected[i]);
+  for (auto rawId : expected) {
+    const auto i = BTLElectronicsId(rawId).denseChannelIndex();
+    require(tdcView[i].rawId() == rawId && qdcView[i].rawId() == rawId);
     require(tdcView[i].valid() == 0xff && qdcView[i].valid() == 0x01);
     for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-      require(tdcView[i].a1()(tac) == 100 * i + tac + 1);
-      require(qdcView[i].p9()(tac) == 100 * i + tac + 2);
+      require(tdcView[i].a1()(tac) == i + 0.125f * tac + 1);
+      require(qdcView[i].p9()(tac) == i + 0.125f * tac + 2);
       require(tdcView[i].t0()(tac) == 0.f && qdcView[i].p0()(tac) == 0.f);
     }
   }
 
-  map.add(BTLDetId(3), {BTLElectronicsId(2, 4, 0, 0), BTLElectronicsId(2, 4, 0, 1)});
-  requireException([&] { map.channelRawIds(); });
+  require(tdcView[1].valid() == 0 && qdcView[1].valid() == 0);
+  map.add(BTLDetId(3), {BTLElectronicsId(12, 0, 0, 0), BTLElectronicsId(12, 0, 0, 1)});
   map.initialize();
-  require(map.channelRawIds().size() == 6);
+  require(d.denseChannelIndex() == 331775);
+  require(map.getListOfDetIds().size() == 3);
   map.clear();
-  requireException([&] { map.channelRawIds(); });
   map.initialize();
-  require(map.channelRawIds().empty());
+  require(map.getListOfDetIds().empty());
 
   BTLReadoutMap duplicate;
   duplicate.add(BTLDetId(1), {a, b});
@@ -96,7 +119,7 @@ int main() {
   requireException([&] { duplicate.add(BTLDetId(2), {c, a}); });
   requireException([&] { duplicate.add(BTLDetId(2), {c, c}); });
   require(duplicate.size() == 1);
-  require(duplicate.channelRawIds().size() == 2);
+  require(duplicate.getListOfDetIds().size() == 1);
   duplicate.initialize();
-  require(duplicate.channelRawIds().size() == 2);
+  require(duplicate.getListOfDetIds().size() == 1);
 }
