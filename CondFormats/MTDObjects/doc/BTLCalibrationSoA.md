@@ -3,8 +3,9 @@
 `btl::BTLTDCCalibrationSoA` and `btl::BTLQDCCalibrationSoA` are separate
 channel-level conditions layouts. Each has a `PortableHostCollection` alias
 and an Alpaka `PortableCollection` alias, with EventSetup type registrations.
-They follow the layout/host/device split used by HGCal and ECAL. They do not
-merge the TDC and QDC IOVs or replace the existing map-based payloads.
+They follow the layout/host/device split used by HGCal and ECAL. TDC and QDC
+have independent persistent payloads and IOVs. The former
+map-based calibration payloads and their container workflow have been removed.
 
 ## Channel and TAC addressing
 
@@ -34,7 +35,8 @@ rows. The index is independent of map insertion order and map completeness;
 it is not the rank of an ID in a partial map. The full detector covers
 0..331775 exactly once. `BTLReadoutMap::checkDenseChannelIndex()` checks that
 coverage and increasing raw IDs. `getListOfDetIds()` enumerates mapped crystals.
-For partial maps, rows for missing channels remain zero with `valid == 0`.
+For sparse calibration payloads, rows for missing channels remain zero with
+`valid == 0`.
 A valid electronics ID with raw ID zero is distinguished by its validity mask.
 
 Validate host IDs with `isValid()` before indexing: the arithmetic function
@@ -45,10 +47,11 @@ same arithmetic for code that already has the four fields. Kernels can consume
 the resulting index and access `view[index]` without a map search.
 
 `BTLReadoutMap::initialize()` rebuilds the transient reverse map; the arithmetic
-index itself needs no initialization. The calibration records still depend on
-`BTLReadoutMapRcd`: changing which channels are mapped invalidates the derived
-collections. A future producer of measured calibrations must also propagate
-its source IOVs.
+index itself needs no initialization. Payloads identify channels by electronics
+ID, so converting a calibration to its dense SoA does not require the readout
+map or geometry. A consumer needing crystal IDs still uses `BTLReadoutMapRcd`.
+The derived TDC and QDC records depend on their respective persistent calibration
+records, so source IOV changes invalidate the corresponding SoA independently.
 
 The raw-ID encoding differs from the former seven-bit HS-link format. Existing
 readout-map and electronics-keyed calibration payloads made with that old
@@ -106,53 +109,151 @@ ADC-to-energy scale. QDC is stored per TAC and channel as for the existing TDC
 calibration. Measurements common to TACs can be replicated by a producer.
 No hard-coded dummy coefficients are built into either layout.
 
-## EventSetup, persistence, and consumers
+## Persistent payloads, EventSetup and consumers
 
-The records are `BTLTDCCalibrationRcd` and `BTLQDCCalibrationRcd`. Host/device
-product types can be used by ESProducers, with the usual Alpaka host-to-device
-copy support. Type registration does not itself produce a collection or copy
-it to the GPU.
+The persistent types are `BTLTDCCalibration` and `BTLQDCCalibration`, in separate
+headers and records `BTLTDCCalibrationRcd` and `BTLQDCCalibrationRcd`. Each is an
+ordinary serializable C++ payload with:
 
-These are in-memory conditions products, like the referenced HGCal layout.
-`PortableHostCollection` is not automatically a Boost-serializable CondDB
-payload. No DB dictionary or `COND_SERIALIZABLE` annotation is claimed for it.
-A DB-backed integration needs either dedicated serializable source payloads
-and an ESProducer that fills these SoAs, or a separately validated serialization
-adapter. The existing persistent payloads and their readers remain available.
-`BTLTrivialCalibrationSource` in `CalibMTD/MTDTrivialCondChannels` produces both
-host collections directly, without a CondObjectContainer or detector-geometry
-loop. Each coefficient is configurable and repeated across all mapped channels
-and eight TACs; every mapped TAC is marked valid. Unmapped rows remain invalid. The default coefficients match the
-referenced electronics simulation. TDC and QDC have separate records and
-consume the same readout map. No DB writer or simulation consumer is supplied.
+- `rawIds`: electronics IDs, one per stored channel, in arbitrary order;
+- `valid`: one eight-bit TAC validity mask per stored channel;
+- coefficient vectors `t0`, `a0`..`a2`, or `p0`..`p9`.
 
-## Uniform calibration source
+Each coefficient vector has exactly `rawIds.size()*8` floats. The value for
+stored channel `i`, TAC `t`, is at `i*8+t`. Sparse payloads are supported; a raw
+ID of zero is valid. `validate()` rejects malformed vector sizes, duplicate or
+invalid IDs (including reserved high bits), and nonfinite coefficients. Missing
+TACs should carry finite placeholder coefficients and have their valid bits
+cleared. Both types have `COND_SERIALIZABLE`, dictionaries, generated Boost
+serialization, EventSetup type registrations and CondDB plugin registrations.
 
-In a job with the MTD geometry and topology loaded:
+`BTLTDCCalibrationSoAESProducer` and `BTLQDCCalibrationSoAESProducer` consume these
+payloads and produce `btl::BTLTDCCalibrationHost` and
+`btl::BTLQDCCalibrationHost`. Their records are **`BTLTDCCalibrationSoARcd`** and
+**`BTLQDCCalibrationSoARcd`**, each dependent on its own persistent record.
+Consumers of the host/device SoAs must use these derived records. Conversion
+validates the input, zero-initializes the full hardware range, and copies each
+stored channel to `BTLElectronicsId(rawId).denseChannelIndex()`.
+
+Load the conversion producers with:
 
 ```python
-process.btlReadoutMap = cms.ESProducer("BTLReadoutMapESProducer")
-process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
-process.btlTrivialCalibrationSource.a1 = 511.27832
-process.btlTrivialCalibrationSource.p0 = 49.542229
+process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
 ```
 
-All parameters are tracked doubles (`t0`, `a0`..`a2`, `p0`..`p9`), stored as
-floats. Nonfinite values, including overflow on conversion to float, are
-rejected. `BTLReadoutMapESProducer` initializes the transient reverse map before
-publishing it. DB-loaded maps likewise need `initialize()` for reverse lookups.
+EventSetup caches the derived products for their IOVs; the conversion is not
+performed per event. The portable host/device aliases and type registrations
+remain available for Alpaka consumers. These conversion producers publish host
+products; device consumers still need the usual Alpaka copy integration.
+`PortableHostCollection` is not the CondDB payload: the persistent vectors and
+portable memory layout are deliberately separate.
 
-Run a geometry-independent framework test with a sparse electronics map:
+## Dummy input and measured calibration results
+
+`BTLTrivialCalibrationSource` now produces the **persistent payloads**, not SoAs.
+The configurable doubles `t0`, `a0`..`a2`, `p0`..`p9` are converted to finite
+floats and replicated over all eight TACs. All selected TACs are marked valid.
+An empty `channelIds` list (the default) selects all 331776 hardware channels
+without geometry or a readout map. A nonempty `cms.vuint32` list selects a sparse
+set of electronics raw IDs. It is independent of the mapped detector subset.
+
+```python
+process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
+process.btlTrivialCalibrationSource.channelIds = cms.vuint32(0, 20)
+process.btlTrivialCalibrationSource.a1 = 511.27832
+process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
+```
+
+Measured calibrations can fill the public vectors in either persistent payload,
+call `validate()`, and publish it in the corresponding persistent record. No
+`MTDContainer` or `CondObjectContainer` is needed. Alternatively, an algorithm
+can publish the host SoAs in the derived records and use the writer's SoA input
+mode. Do not enable another producer of the same product in the same record.
+Device results must first be copied to host with the normal queue synchronization.
+
+The reusable conversion functions live in
+`CalibMTD/MTDTrivialCondChannels/interface/BTLCalibrationConversions.h`:
+
+```cpp
+auto host = btl::makeSoA(tdcPayload);  // overloads for TDC and QDC
+auto persistent = btl::makePayload(host);
+```
+
+The reverse conversion checks the collection size and that each valid row's raw
+ID agrees with its dense index. It stores rows with nonzero validity masks in
+dense-index order, retaining all eight TAC coefficient slots for those rows.
+Rows without valid TACs are omitted. Thus the round trip preserves usable
+calibrations and validity, but may reorder channels and discard all-invalid rows.
+
+## Writing and reading CondDB
+
+`BTLCalibrationWriter` is a separate analyzer using `PoolDBOutputService`.
+With `fromSoA=False`, it validates and writes persistent inputs from the dummy
+source or any measured-payload producer. With `fromSoA=True`, it constructs the
+two persistent payloads from host calibration SoAs using `makePayload()`.
+It writes each product on first use and when its input record changes, with
+independent TDC/QDC IOVs. The output time type must be `runnumber`; the IOV starts
+at the current event's run. Run the writer from the first run of each intended
+IOV. Multiple different calibration IOVs within one run are not supported.
+
+Write both dummy payloads to a new local SQLite database, then read them back
+through `PoolDBESSource` and build the derived SoAs:
 
 ```sh
-cmsRun CalibMTD/MTDTrivialCondChannels/test/testBTLCalibrationSoA_cfg.py
+cmsRun CondTools/MTD/test/writeBTLCalibration_cfg.py outputDB=btlCalibration.db firstRun=1
+cmsRun CondTools/MTD/test/readBTLCalibration_cfg.py inputDB=btlCalibration.db firstRun=1
 ```
 
-For the full geometry, use
-`CalibMTD/MTDTrivialCondChannels/test/testBTLCalibrationSoAGeometry_cfg.py`.
-These examples only request EventSetup products; they do not write SQLite files.
+To exercise the reverse conversion when writing:
+
+```sh
+cmsRun CondTools/MTD/test/writeBTLCalibration_cfg.py outputDB=btlFromSoA.db fromSoA=True
+```
+
+The examples use separate tags `BTLTDCCalibration_v1` and `BTLQDCCalibration_v1`.
+The old `BTLTDCCalibs` / `BTLTDCEleChannelCalibs` payload types, records, writers,
+dump utility and trivial retriever have been removed. Old tags are not readable
+through the new payload types: migration requires reading them with the previous
+code and explicitly converting their data, including any electronics encoding
+changes. Their serialized representation is not compatible with these vectors.
 
 ## Validation
+
+Run the following commands from the `src` directory of a compatible CMSSW
+release containing these changes. Initialize the runtime and build first:
+
+```sh
+source /cvmfs/cms.cern.ch/cmsset_default.sh
+eval "$(scram runtime -sh)"
+scram b -j 8
+```
+
+Run the four registered tests (hardware indexing/SoA storage, payload/SoA
+conversions, trivial-source EventSetup integration, and SQLite persistence):
+
+```sh
+scram b runtests_TESTS="testBTLCalibrationSoA testBTLCalibrationConversions testBTLTrivialCalibrationSoA testBTLCalibrationDB"
+```
+
+Alternatively, run them individually. The shell wrappers need `SCRAM_TEST_PATH`
+to locate their configuration files. The database wrapper creates and cleans
+its own temporary directory and tests both persistent-input and SoA-input writing:
+
+```sh
+testBTLCalibrationSoA
+testBTLCalibrationConversions
+cmsRun CalibMTD/MTDTrivialCondChannels/test/testBTLCalibrationSoA_cfg.py
+SCRAM_TEST_PATH="$CMSSW_BASE/src/CondTools/MTD/test" bash CondTools/MTD/test/testBTLCalibrationDB.sh
+```
+
+The full-geometry check is additional to the registered tests:
+
+```sh
+cmsRun CalibMTD/MTDTrivialCondChannels/test/testBTLCalibrationSoAGeometry_cfg.py
+```
+
+The standalone SQLite writer/readback commands are listed in the preceding
+section; use a new output database filename for each independent writing test.
 
 `testBTLCalibrationSoA` exhaustively checks all 331776 valid electronics IDs,
 round-trip field decoding, consecutive dense indices and increasing raw IDs,
@@ -161,22 +262,32 @@ sparse-map addressing at the first and last rows, independent storage across
 channels/TACs, zero validity in holes, reverse lookups and atomic duplicate
 rejection.
 
-`testBTLTrivialCalibrationSoA` requests both products over two events with a
-sparse map and checks all 14 configurable coefficients, raw IDs and validity
+`testBTLTrivialCalibrationSoA` requests both derived products through persistent
+dummy inputs over two events with a sparse map and checks all 14 configurable coefficients, raw IDs and validity
 bits at their hardware indices. The full-geometry example additionally checks
 complete coverage and every coefficient for all 331776 channels using the real
 `BTLReadoutMapESProducer`.
 
-Verified in a temporary `CMSSW_20_1_0_pre5` area (`el9_amd64_gcc14`) because
-the original nightly is no longer available on CVMFS: the updated packages built
-successfully (including CUDA/ROCm type registrations and dictionary checks),
-the exhaustive indexing/storage test passed, and both sparse-map and
-full-geometry EventSetup tests passed. The full-geometry test used Run4D127
-and checked every channel at its arithmetic dense index. GPU kernels were not
-executed. Framework tests ran outside the filesystem sandbox because `cmsRun`
-crashes during startup inside it.
+The persistence integration test `testBTLCalibrationDB` writes and reads a local
+SQLite database in both writer modes. It checks every coefficient of sparse,
+nonuniform test payloads after reconstruction as SoAs, including partial TAC
+masks, raw ID zero and the last channel. Across three runs (two events per run),
+it checks separate TDC boundaries at runs 1/3 and QDC boundaries at runs 1/2/3,
+including the exact stored IOV counts. `testBTLCalibrationConversions` checks
+round trips, empty payloads, reordering and malformed-input rejection.
+
+Verified on 2026-11-13 in a temporary `CMSSW_20_1_0_pre5` area
+(`el9_amd64_gcc14`): package build, generated serialization, dictionary checks,
+and all four registered tests passed. The full Run4D127 geometry check also
+passed, verifying all coefficients on all 331776 channels. The standalone dummy
+writer/readback examples successfully stored both tags and requested both
+derived SoAs from SQLite. The original nightly is no longer
+available on CVMFS. Framework tests ran outside the filesystem sandbox because
+`cmsRun` crashes during startup inside it. GPU kernels were not executed.
 
 ## References
+
+- [Original vector-based TDC payload](https://github.com/cquarant/cmssw/blob/cq_btlCondFormat/CondFormats/MTDObjects/interface/BTLTDCCalibration.h)
 
 - [HGCal calibration layout](https://github.com/cquarant/cmssw/blob/cq_btlCondContainer_v1-2/CondFormats/HGCalObjects/interface/HGCalCalibParamSoA.h)
 - [BTL digi layout](https://github.com/24LopezR/cmssw/blob/MTD_201X_GPU_fix52456/DataFormats/FTLDigiSoA/interface/BTLDigiSoA.h)

@@ -1,7 +1,7 @@
-// Uniform, configurable channel/TAC calibrations; no CondObjectContainer dependency.
-#include "CondFormats/MTDObjects/interface/BTLTDCCalibrationHost.h"
-#include "CondFormats/MTDObjects/interface/BTLQDCCalibrationHost.h"
-#include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+// Uniform persistent payload source. The same payloads can be written to CondDB.
+#include "CondFormats/MTDObjects/interface/BTLTDCCalibration.h"
+#include "CondFormats/MTDObjects/interface/BTLQDCCalibration.h"
+#include "CondFormats/MTDObjects/interface/BTLElectronicsId.h"
 #include "CondFormats/MTDObjects/interface/BTLElectronicsIndexing.h"
 #include "CondFormats/DataRecord/interface/BTLTDCCalibrationRcd.h"
 #include "CondFormats/DataRecord/interface/BTLQDCCalibrationRcd.h"
@@ -11,18 +11,28 @@
 #include "FWCore/ParameterSet/interface/ConfigurationDescriptions.h"
 #include "FWCore/ParameterSet/interface/ParameterSetDescription.h"
 #include "FWCore/Utilities/interface/Exception.h"
-#include "HeterogeneousCore/AlpakaInterface/interface/host.h"
 #include <array>
 #include <cmath>
 #include <memory>
+#include <vector>
 
 class BTLTrivialCalibrationSource : public edm::ESProducer, public edm::EventSetupRecordInfiniteIntervalFinder {
 public:
-  explicit BTLTrivialCalibrationSource(const edm::ParameterSet& config) {
-    tdcMap_ = setWhatProduced(this, &BTLTrivialCalibrationSource::produceTDC).consumes();
-    qdcMap_ = setWhatProduced(this, &BTLTrivialCalibrationSource::produceQDC).consumes();
+  explicit BTLTrivialCalibrationSource(const edm::ParameterSet& config)
+      : ids_(config.getParameter<std::vector<unsigned int>>("channelIds")) {
+    setWhatProduced(this, &BTLTrivialCalibrationSource::produceTDC);
+    setWhatProduced(this, &BTLTrivialCalibrationSource::produceQDC);
     findingRecord<BTLTDCCalibrationRcd>();
     findingRecord<BTLQDCCalibrationRcd>();
+    // An empty channelIds selects the full hardware range, independent of geometry.
+    if (ids_.empty()) {
+      ids_.reserve(BTLElectronicsIndexing::kNumberOfChannels);
+      for (int serenity = 0; serenity < 12; ++serenity)
+        for (int hs = 0; hs < 36; ++hs)
+          for (int el = 0; el < 24; ++el)
+            for (int ch = 0; ch < 32; ++ch)
+              ids_.push_back(BTLElectronicsId(serenity * 12 + hs / 3, hs, el, ch).rawId());
+    }
     coefficients_[0] = config.getParameter<double>("t0");
     coefficients_[1] = config.getParameter<double>("a0");
     coefficients_[2] = config.getParameter<double>("a1");
@@ -37,14 +47,14 @@ public:
     coefficients_[11] = config.getParameter<double>("p7");
     coefficients_[12] = config.getParameter<double>("p8");
     coefficients_[13] = config.getParameter<double>("p9");
-    for (auto coefficient : coefficients_) {
+    for (auto coefficient : coefficients_)
       if (!std::isfinite(coefficient))
         throw cms::Exception("Configuration") << "BTL calibration coefficients must be finite floats";
-    }
   }
 
   static void fillDescriptions(edm::ConfigurationDescriptions& descriptions) {
     edm::ParameterSetDescription desc;
+    desc.add<std::vector<unsigned int>>("channelIds", {});
     desc.add<double>("t0", -0.048343264);
     desc.add<double>("a0", 57.244545);
     desc.add<double>("a1", 511.27832);
@@ -62,60 +72,38 @@ public:
     descriptions.add("btlTrivialCalibrationSource", desc);
   }
 
-  std::unique_ptr<btl::BTLTDCCalibrationHost> produceTDC(const BTLTDCCalibrationRcd& record) {
-    const auto& map = record.get(tdcMap_);
-    auto result = std::make_unique<btl::BTLTDCCalibrationHost>(cms::alpakatools::host(),
-                                                               BTLElectronicsIndexing::kNumberOfChannels);
-    result->zeroInitialise();
-    auto view = result->view();
-    for (const auto& detId : map.getListOfDetIds()) {
-      const auto pair = map.getElectronicsId(detId);
-      for (const auto& id : {pair.minus, pair.plus}) {
-        if (!id.isValid())
-          throw cms::Exception("InvalidBTLElectronicsId") << id;
-        const auto i = id.denseChannelIndex();
-        view[i].rawId() = id.rawId();
-        view[i].valid() = 0xff;
-        view[i].t0().setConstant(coefficients_[0]);
-        view[i].a0().setConstant(coefficients_[1]);
-        view[i].a1().setConstant(coefficients_[2]);
-        view[i].a2().setConstant(coefficients_[3]);
-      }
-    }
+  std::unique_ptr<BTLTDCCalibration> produceTDC(const BTLTDCCalibrationRcd&) {
+    auto result = std::make_unique<BTLTDCCalibration>();
+    result->rawIds = ids_;
+    result->valid.assign(ids_.size(), 0xff);
+    result->t0.assign(ids_.size() * 8, coefficients_[0]);
+    result->a0.assign(ids_.size() * 8, coefficients_[1]);
+    result->a1.assign(ids_.size() * 8, coefficients_[2]);
+    result->a2.assign(ids_.size() * 8, coefficients_[3]);
+    result->validate();
     return result;
   }
 
-  std::unique_ptr<btl::BTLQDCCalibrationHost> produceQDC(const BTLQDCCalibrationRcd& record) {
-    const auto& map = record.get(qdcMap_);
-    auto result = std::make_unique<btl::BTLQDCCalibrationHost>(cms::alpakatools::host(),
-                                                               BTLElectronicsIndexing::kNumberOfChannels);
-    result->zeroInitialise();
-    auto view = result->view();
-    for (const auto& detId : map.getListOfDetIds()) {
-      const auto pair = map.getElectronicsId(detId);
-      for (const auto& id : {pair.minus, pair.plus}) {
-        if (!id.isValid())
-          throw cms::Exception("InvalidBTLElectronicsId") << id;
-        const auto i = id.denseChannelIndex();
-        view[i].rawId() = id.rawId();
-        view[i].valid() = 0xff;
-        view[i].p0().setConstant(coefficients_[4]);
-        view[i].p1().setConstant(coefficients_[5]);
-        view[i].p2().setConstant(coefficients_[6]);
-        view[i].p3().setConstant(coefficients_[7]);
-        view[i].p4().setConstant(coefficients_[8]);
-        view[i].p5().setConstant(coefficients_[9]);
-        view[i].p6().setConstant(coefficients_[10]);
-        view[i].p7().setConstant(coefficients_[11]);
-        view[i].p8().setConstant(coefficients_[12]);
-        view[i].p9().setConstant(coefficients_[13]);
-      }
-    }
+  std::unique_ptr<BTLQDCCalibration> produceQDC(const BTLQDCCalibrationRcd&) {
+    auto result = std::make_unique<BTLQDCCalibration>();
+    result->rawIds = ids_;
+    result->valid.assign(ids_.size(), 0xff);
+    result->p0.assign(ids_.size() * 8, coefficients_[4]);
+    result->p1.assign(ids_.size() * 8, coefficients_[5]);
+    result->p2.assign(ids_.size() * 8, coefficients_[6]);
+    result->p3.assign(ids_.size() * 8, coefficients_[7]);
+    result->p4.assign(ids_.size() * 8, coefficients_[8]);
+    result->p5.assign(ids_.size() * 8, coefficients_[9]);
+    result->p6.assign(ids_.size() * 8, coefficients_[10]);
+    result->p7.assign(ids_.size() * 8, coefficients_[11]);
+    result->p8.assign(ids_.size() * 8, coefficients_[12]);
+    result->p9.assign(ids_.size() * 8, coefficients_[13]);
+    result->validate();
     return result;
   }
 
 private:
-  edm::ESGetToken<BTLReadoutMap, BTLReadoutMapRcd> tdcMap_, qdcMap_;
+  std::vector<unsigned int> ids_;
   std::array<float, 14> coefficients_;
 };
 

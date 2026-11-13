@@ -2,6 +2,7 @@ import FWCore.ParameterSet.Config as cms
 
 btlTrivialCalibrationSource = cms.ESSource(
     "BTLTrivialCalibrationSource",
+    channelIds=cms.vuint32(),  # Empty means the full hardware range.
     t0=cms.double(-0.048343264),
     a0=cms.double(57.244545),
     a1=cms.double(511.27832),

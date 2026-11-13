@@ -1,2 +1,0 @@
-COND_SERIALIZATION_INSTANTIATE(MTDCondObjectContainer<BTLTDCCrystalCalib>);
-COND_SERIALIZATION_INSTANTIATE(BTLChannelCondObjectContainer<BTLTDCEleChannelCalib>);

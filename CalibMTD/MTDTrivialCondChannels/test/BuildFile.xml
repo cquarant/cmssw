@@ -1,4 +1,4 @@
-<library file="BTLCalibrationSoACheck.cc" name="BTLCalibrationSoATestPlugins">
+<library file="BTLCalibration*.cc" name="BTLCalibrationSoATestPlugins">
   <use name="CondFormats/MTDObjects"/>
   <use name="CondFormats/DataRecord"/>
   <use name="FWCore/Framework"/>
@@ -6,4 +6,8 @@
   <use name="FWCore/Utilities"/>
   <flags EDM_PLUGIN="1"/>
 </library>
-<test name="testBTLTrivialCalibrationSoA" command="cmsRun ${SCRAM_TEST_PATH}/testBTLCalibrationSoA_cfg.py"/>
+<test name="testBTLTrivialCalibrationSoA" command="testBTLTrivialCalibrationSoA.sh"/>
+<bin file="testBTLCalibrationConversions.cc" name="testBTLCalibrationConversions">
+  <use name="CalibMTD/MTDTrivialCondChannels"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+</bin>

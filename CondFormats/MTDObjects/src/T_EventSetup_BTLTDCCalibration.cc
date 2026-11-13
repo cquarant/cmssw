@@ -1,4 +1,4 @@
-#include "CondFormats/MTDObjects/interface/BTLTDCCalibs.h"
+#include "CondFormats/MTDObjects/interface/BTLTDCCalibration.h"
 #include "FWCore/Utilities/interface/typelookup.h"
 
-TYPELOOKUP_DATA_REG(BTLTDCCalibs);
+TYPELOOKUP_DATA_REG(BTLTDCCalibration);

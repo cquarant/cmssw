@@ -16,6 +16,8 @@ process.topologyIOV = cms.ESSource(
 )
 process.map = cms.ESProducer("BTLCalibrationTestMap")
 process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
+process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
+process.btlTrivialCalibrationSource.channelIds = cms.vuint32(0, 20, (143 << 16) | (35 << 10) | (23 << 5), (143 << 16) | (35 << 10) | (23 << 5) | 31)
 process.btlTrivialCalibrationSource.t0 = 1.0
 process.btlTrivialCalibrationSource.a0 = 2.0
 process.btlTrivialCalibrationSource.a1 = 3.0

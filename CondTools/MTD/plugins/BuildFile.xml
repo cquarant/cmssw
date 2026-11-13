@@ -1,5 +1,6 @@
 <library file="*.cc" name="MTDTrivialCalibsWritePlugins">
 <use name="CondCore/DBOutputService"/>
+<use name="CalibMTD/MTDTrivialCondChannels"/>
 <use name="CondFormats/MTDObjects"/>
 <use name="CondFormats/DataRecord"/>
 <use name="FWCore/Framework"/>

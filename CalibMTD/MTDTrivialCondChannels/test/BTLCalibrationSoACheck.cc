@@ -1,11 +1,12 @@
 #include "CondFormats/MTDObjects/interface/BTLReadoutMap.h"
+#include "CondFormats/DataRecord/interface/BTLReadoutMapRcd.h"
 #include "CondFormats/MTDObjects/interface/BTLElectronicsIndexing.h"
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include <vector>
 #include "CondFormats/MTDObjects/interface/BTLTDCCalibrationHost.h"
 #include "CondFormats/MTDObjects/interface/BTLQDCCalibrationHost.h"
-#include "CondFormats/DataRecord/interface/BTLTDCCalibrationRcd.h"
-#include "CondFormats/DataRecord/interface/BTLQDCCalibrationRcd.h"
+#include "CondFormats/DataRecord/interface/BTLTDCCalibrationSoARcd.h"
+#include "CondFormats/DataRecord/interface/BTLQDCCalibrationSoARcd.h"
 #include "FWCore/Framework/interface/one/EDAnalyzer.h"
 #include "FWCore/Framework/interface/ESProducer.h"
 #include "FWCore/Framework/interface/EventSetup.h"
@@ -83,8 +84,8 @@ private:
     if (!value)
       throw cms::Exception("TestFailure") << "Unexpected BTL calibration SoA content";
   }
-  edm::ESGetToken<btl::BTLTDCCalibrationHost, BTLTDCCalibrationRcd> tdc_;
-  edm::ESGetToken<btl::BTLQDCCalibrationHost, BTLQDCCalibrationRcd> qdc_;
+  edm::ESGetToken<btl::BTLTDCCalibrationHost, BTLTDCCalibrationSoARcd> tdc_;
+  edm::ESGetToken<btl::BTLQDCCalibrationHost, BTLQDCCalibrationSoARcd> qdc_;
   edm::ESGetToken<BTLReadoutMap, BTLReadoutMapRcd> map_;
   std::vector<double> expected_;
   bool complete_;

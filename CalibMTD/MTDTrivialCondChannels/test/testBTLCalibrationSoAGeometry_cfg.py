@@ -14,6 +14,7 @@ process.source = cms.Source("EmptySource")
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(1))
 process.btlReadoutMap = cms.ESProducer("BTLReadoutMapESProducer")
 process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
+process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
 # Check the full map and every coefficient at its hardware dense index.
 _coefficients = ["t0", "a0", "a1", "a2"] + [f"p{i}" for i in range(10)]
 process.check = cms.EDAnalyzer(
