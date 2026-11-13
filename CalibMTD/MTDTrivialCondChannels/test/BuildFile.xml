@@ -1,0 +1,9 @@
+<library file="BTLCalibrationSoACheck.cc" name="BTLCalibrationSoATestPlugins">
+  <use name="CondFormats/MTDObjects"/>
+  <use name="CondFormats/DataRecord"/>
+  <use name="FWCore/Framework"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
+<test name="testBTLTrivialCalibrationSoA" command="cmsRun ${SCRAM_TEST_PATH}/testBTLCalibrationSoA_cfg.py"/>

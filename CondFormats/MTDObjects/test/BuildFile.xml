@@ -1,0 +1,5 @@
+<bin file="testBTLCalibrationSoA.cc" name="testBTLCalibrationSoA">
+  <use name="CondFormats/MTDObjects"/>
+  <use name="FWCore/Utilities"/>
+  <use name="HeterogeneousCore/AlpakaInterface"/>
+</bin>

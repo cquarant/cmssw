@@ -1,5 +1,10 @@
 <library file="*.cc" name="MTDTrivialConditionPlugins">
 <use name="CalibMTD/MTDTrivialCondChannels"/>
 <use name="FWCore/Framework"/>
+<use name="CondFormats/MTDObjects"/>
+<use name="CondFormats/DataRecord"/>
+<use name="FWCore/ParameterSet"/>
+<use name="FWCore/Utilities"/>
+<use name="HeterogeneousCore/AlpakaInterface"/>
 <flags EDM_PLUGIN="1"/>
 </library>

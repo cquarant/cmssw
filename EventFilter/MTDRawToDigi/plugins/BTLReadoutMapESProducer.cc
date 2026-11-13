@@ -80,6 +80,7 @@ std::unique_ptr<BTLReadoutMap> BTLReadoutMapESProducer::produce(const BTLReadout
     }
   }
 
+  readoutMap->initialize();
   return readoutMap;
 }
 
