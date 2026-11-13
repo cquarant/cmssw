@@ -217,6 +217,43 @@ cmsRun CondTools/MTD/test/writeBTLCalibration_cfg.py outputDB=btlCalibration.db 
 cmsRun CondTools/MTD/test/readBTLCalibration_cfg.py inputDB=btlCalibration.db firstRun=1
 ```
 
+The reader also prints the persistent coefficients, after `PoolDBESSource`
+has deserialized the CondDB blobs. Select an electronics raw ID (decimal) and
+a TAC, for example channel 20 and TAC 3:
+
+```sh
+cmsRun CondTools/MTD/test/readBTLCalibration_cfg.py inputDB=btlCalibration.db firstRun=1 rawId=20 tac=3
+```
+
+Alternatively, select the consecutive hardware channel index, in 0..331775:
+
+```sh
+cmsRun CondTools/MTD/test/readBTLCalibration_cfg.py inputDB=btlCalibration.db firstRun=1 denseIndex=3000 tac=3
+```
+
+`denseIndex=3000` selects electronics `rawId=69304`. Raw IDs encode FED,
+HS-link, e-link and TOFHIR channel fields and are not consecutive integers;
+`rawId=3000` is an invalid electronics ID. Specify either `rawId` or
+`denseIndex`; selecting both is rejected. `denseIndex=-1` disables dense
+selection and is the default.
+
+The output contains one `TDC rawId=20 denseIndex=20 tac=3 valid=...` line with all eight
+T1/T2 coefficients and one `QDC` line with `p0` through `p9`. The default
+selection is `rawId=0 tac=0`. Use `tac=-1` for all eight TACs, or `rawId=-1`
+for all stored channels. Redirect stdout to save the dump:
+
+```sh
+cmsRun CondTools/MTD/test/readBTLCalibration_cfg.py inputDB=btlCalibration.db rawId=-1 tac=-1 > btlCalibration.txt
+```
+
+`firstRun` selects the IOV independently for each tag; it is not a payload
+insertion number. Override `tdcTag` and `qdcTag` when inspecting other tags.
+`valid=0` means the printed coefficients are placeholders for an uncalibrated
+TAC; a missing channel is explicitly reported as not stored. TDC validity
+applies to both T1 and T2. The reader accesses the persistent vectors by their
+stored channel position, independently of payload ordering, and also requests
+the derived SoAs as a conversion check. No database is modified.
+
 To exercise the reverse conversion when writing:
 
 ```sh
@@ -293,7 +330,11 @@ nonuniform test payloads after reconstruction as SoAs, including independent
 T1/T2 values, partial TAC masks, raw ID zero and the last channel. Across three
 runs (two events per run),
 it checks separate TDC boundaries at runs 1/3 and QDC boundaries at runs 1/2/3,
-including the exact stored IOV counts. `testBTLCalibrationConversions` checks
+including the exact stored IOV counts. It also runs the coefficient reader at
+run 2 with custom tags, channel 0 and TAC 7, verifying every printed coefficient
+against the distinct TDC and QDC source IOVs. Dense-index selection is checked
+at indices 0 and 331775, including equality with raw-ID selection at index 0.
+`testBTLCalibrationConversions` checks
 round trips, empty payloads, reordering and malformed-input rejection for
 both T1 and T2 coefficient sets.
 
