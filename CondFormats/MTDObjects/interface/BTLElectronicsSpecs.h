@@ -1,7 +1,6 @@
 #ifndef CondFormats_MTDObjects_BTLElectronicsSpecs_h
 #define CondFormats_MTDObjects_BTLElectronicsSpecs_h
 
-<<<<<<<< HEAD:CondFormats/MTDObjects/interface/BTLElectronicsSpecs.h
 #include <array>
 #include <utility>
 #include <cstdint>
@@ -92,9 +91,5 @@ namespace BTLElectronicsSpecs {
   static constexpr auto FE_to_ELINK_mapping_L1 = buildFEtoElinkMapping(ELINK_to_FE_mapping_L1);
 
 }  // namespace BTLElectronicsSpecs
-========
-// Electronics specifications are shared with the conditions and dense indexing.
-#include "CondFormats/MTDObjects/interface/BTLElectronicsSpecs.h"
->>>>>>>> 692b18f9e22 (implemented right HSlink numbering):EventFilter/MTDRawToDigi/interface/BTLElectronicsSpecs.h
 
 #endif
