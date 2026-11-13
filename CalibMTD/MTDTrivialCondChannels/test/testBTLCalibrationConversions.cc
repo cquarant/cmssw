@@ -30,10 +30,14 @@ int main() {
       const unsigned row = channel == 0 ? 2 : channel - 1;
       btltest::check(copy.valid[row] == payload.valid[channel]);
       for (unsigned tac = 0; tac < 8; ++tac) {
-        btltest::check(copy.t0[row * 8 + tac] == payload.t0[channel * 8 + tac]);
-        btltest::check(copy.a0[row * 8 + tac] == payload.a0[channel * 8 + tac]);
-        btltest::check(copy.a1[row * 8 + tac] == payload.a1[channel * 8 + tac]);
-        btltest::check(copy.a2[row * 8 + tac] == payload.a2[channel * 8 + tac]);
+        btltest::check(copy.t0_T1[row * 8 + tac] == payload.t0_T1[channel * 8 + tac]);
+        btltest::check(copy.a0_T1[row * 8 + tac] == payload.a0_T1[channel * 8 + tac]);
+        btltest::check(copy.a1_T1[row * 8 + tac] == payload.a1_T1[channel * 8 + tac]);
+        btltest::check(copy.a2_T1[row * 8 + tac] == payload.a2_T1[channel * 8 + tac]);
+        btltest::check(copy.t0_T2[row * 8 + tac] == payload.t0_T2[channel * 8 + tac]);
+        btltest::check(copy.a0_T2[row * 8 + tac] == payload.a0_T2[channel * 8 + tac]);
+        btltest::check(copy.a1_T2[row * 8 + tac] == payload.a1_T2[channel * 8 + tac]);
+        btltest::check(copy.a2_T2[row * 8 + tac] == payload.a2_T2[channel * 8 + tac]);
       }
     }
     auto bad = payload;
@@ -49,10 +53,16 @@ int main() {
     bad.rawIds[1] = BTLElectronicsId(0, 3, 0, 0).rawId();
     rejects([&] { bad.validate(); });
     bad = payload;
-    bad.a2.pop_back();
+    bad.a2_T1.pop_back();
     rejects([&] { bad.validate(); });
     bad = payload;
-    bad.t0[0] = std::numeric_limits<float>::infinity();
+    bad.a2_T2.pop_back();
+    rejects([&] { bad.validate(); });
+    bad = payload;
+    bad.t0_T1[0] = std::numeric_limits<float>::infinity();
+    rejects([&] { bad.validate(); });
+    bad = payload;
+    bad.t0_T2[0] = std::numeric_limits<float>::infinity();
     rejects([&] { bad.validate(); });
     soa.view()[0].rawId() = 20;
     rejects([&] { btl::makePayload(soa); });
@@ -61,7 +71,10 @@ int main() {
     auto compact = btl::makePayload(btl::makeSoA(partial));
     btltest::check(compact.size() == 2 && compact.rawIds[0] == 0 && compact.rawIds[1] == 20);
     auto nonfinite = btl::makeSoA(payload);
-    nonfinite.view()[0].t0()(0) = std::numeric_limits<float>::quiet_NaN();
+    nonfinite.view()[0].t0_T1()(0) = std::numeric_limits<float>::quiet_NaN();
+    rejects([&] { btl::makePayload(nonfinite); });
+    nonfinite = btl::makeSoA(payload);
+    nonfinite.view()[0].t0_T2()(0) = std::numeric_limits<float>::quiet_NaN();
     rejects([&] { btl::makePayload(nonfinite); });
     btl::BTLTDCCalibrationHost wrongSize(cms::alpakatools::host(), 1);
     rejects([&] { btl::makePayload(wrongSize); });

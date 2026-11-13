@@ -3,13 +3,13 @@
 `btl::BTLTDCCalibrationSoA` and `btl::BTLQDCCalibrationSoA` are separate
 channel-level conditions layouts. Each has a `PortableHostCollection` alias
 and an Alpaka `PortableCollection` alias, with EventSetup type registrations.
-They follow the layout/host/device split used by HGCal and ECAL. TDC and QDC
+They follow the layout/host/device split used by HGCal in SiPixelObjects. TDC and QDC
 have independent persistent payloads and IOVs. The former
 map-based calibration payloads and their container workflow have been removed.
 
 ## Channel and TAC addressing
 
-One row corresponds to **one electronics channel**, including a single readout
+One row corresponds to **one electronics channel**, corresponding to a single readout
 side of a crystal. Every calibration coefficient is an Eigen vector of eight
 floats, addressed by the TAC ID. `SOA_EIGEN_COLUMN` stores a component across
 channels contiguously, as in `HGCalCalibParamSoA`.
@@ -58,7 +58,9 @@ readout-map and electronics-keyed calibration payloads made with that old
 encoding must be regenerated; they cannot be interpreted as the new format.
 
 `valid` is a per-TAC bit mask, independent for TDC and QDC: bit `t` is set only
-when TAC `t` has a calibration. Allocation does not initialize the collection;
+when TAC `t` has a calibration. For TDC, a valid TAC has both T1 and T2
+responses; there are no separate discriminator validity masks. Allocation does
+not initialize the collection;
 producers call `zeroInitialise()` and then fill coefficients, raw IDs and
 valid bits. Zero coefficients alone are not usable dummy calibrations.
 
@@ -69,16 +71,23 @@ tdc.zeroInitialise();
 // For a validated, mapped electronicsId and 0 <= tac < 8:
 const auto i = electronicsId.denseChannelIndex();
 tdc.view()[i].rawId() = electronicsId.rawId();
-tdc.view()[i].t0()(tac) = measuredT0;
-tdc.view()[i].a0()(tac) = measuredA0;
-tdc.view()[i].a1()(tac) = measuredA1;
-tdc.view()[i].a2()(tac) = measuredA2;
+tdc.view()[i].t0_T1()(tac) = measuredT0_T1;
+tdc.view()[i].a0_T1()(tac) = measuredA0_T1;
+tdc.view()[i].a1_T1()(tac) = measuredA1_T1;
+tdc.view()[i].a2_T1()(tac) = measuredA2_T1;
+tdc.view()[i].t0_T2()(tac) = measuredT0_T2;
+tdc.view()[i].a0_T2()(tac) = measuredA0_T2;
+tdc.view()[i].a1_T2()(tac) = measuredA1_T2;
+tdc.view()[i].a2_T2()(tac) = measuredA2_T2;
 tdc.view()[i].valid() |= uint8_t(1u << tac);
 ```
 
 ## Parameter definitions and units
 
-TDC fields are `t0`, `a0`, `a1`, `a2`, matching the electronics simulation:
+TDC stores two independent sets of fields: `t0_T1`, `a0_T1`, `a1_T1`,
+`a2_T1` and `t0_T2`, `a0_T2`, `a1_T2`, `a2_T2`. Each field contains eight
+TAC coefficients per electronics channel. For either discriminator, the response
+uses its corresponding `t0`, `a0`, `a1`, `a2` in the electronics-simulation model:
 
 ```
 q = coarse - time / clockPeriod - t0
@@ -90,10 +99,9 @@ corresponding power of `q`. Reconstruction inverts the quadratic on its physical
 branch, then computes `time = (coarse - t0 - q) * clockPeriod`. The output is in
 seconds if the clock period is in seconds (the reference uses 6.25 ns).
 The layout stores the response parameters; it does not implement an inverse,
-clock rollover handling, time walk, or an absolute time offset. It currently
-provides one response per TAC and channel, shared by T1 and T2 as in the dummy
-model. Independent responses for the two discriminators would require an
-additional dimension or separate coefficients once that calibration is defined.
+clock rollover handling, time walk, or an absolute time offset. T1 and T2
+responses can differ for every TAC and channel; neither response is inferred
+from the other.
 
 QDC fields are `p0` through `p9`, including the currently zero higher orders:
 
@@ -117,7 +125,8 @@ ordinary serializable C++ payload with:
 
 - `rawIds`: electronics IDs, one per stored channel, in arbitrary order;
 - `valid`: one eight-bit TAC validity mask per stored channel;
-- coefficient vectors `t0`, `a0`..`a2`, or `p0`..`p9`.
+- TDC coefficient vectors `t0_T1`, `a0_T1`..`a2_T1` and
+  `t0_T2`, `a0_T2`..`a2_T2`, or QDC vectors `p0`..`p9`.
 
 Each coefficient vector has exactly `rawIds.size()*8` floats. The value for
 stored channel `i`, TAC `t`, is at `i*8+t`. Sparse payloads are supported; a raw
@@ -151,8 +160,11 @@ portable memory layout are deliberately separate.
 ## Dummy input and measured calibration results
 
 `BTLTrivialCalibrationSource` now produces the **persistent payloads**, not SoAs.
-The configurable doubles `t0`, `a0`..`a2`, `p0`..`p9` are converted to finite
-floats and replicated over all eight TACs. All selected TACs are marked valid.
+The 18 configurable doubles `t0_T1`, `a0_T1`..`a2_T1`,
+`t0_T2`, `a0_T2`..`a2_T2`, and `p0`..`p9` are converted to finite
+floats and replicated over all eight TACs. T1 and T2 are configurable
+independently; their defaults use the same dummy response coefficients. All
+selected TACs are marked valid.
 An empty `channelIds` list (the default) selects all 331776 hardware channels
 without geometry or a readout map. A nonempty `cms.vuint32` list selects a sparse
 set of electronics raw IDs. It is independent of the mapped detector subset.
@@ -160,7 +172,8 @@ set of electronics raw IDs. It is independent of the mapped detector subset.
 ```python
 process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
 process.btlTrivialCalibrationSource.channelIds = cms.vuint32(0, 20)
-process.btlTrivialCalibrationSource.a1 = 511.27832
+process.btlTrivialCalibrationSource.a1_T1 = 511.27832
+process.btlTrivialCalibrationSource.a1_T2 = 512.0
 process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
 ```
 
@@ -211,6 +224,10 @@ cmsRun CondTools/MTD/test/writeBTLCalibration_cfg.py outputDB=btlFromSoA.db from
 ```
 
 The examples use separate tags `BTLTDCCalibration_v1` and `BTLQDCCalibration_v1`.
+The TDC schema now includes separate T1/T2 coefficient vectors. SQLite files
+written with the previous single-response development payload must be regenerated
+for this schema; no automatic schema migration is supplied.
+
 The old `BTLTDCCalibs` / `BTLTDCEleChannelCalibs` payload types, records, writers,
 dump utility and trivial retriever have been removed. Old tags are not readable
 through the new payload types: migration requires reading them with the previous
@@ -232,7 +249,8 @@ Run the four registered tests (hardware indexing/SoA storage, payload/SoA
 conversions, trivial-source EventSetup integration, and SQLite persistence):
 
 ```sh
-scram b runtests_TESTS="testBTLCalibrationSoA testBTLCalibrationConversions testBTLTrivialCalibrationSoA testBTLCalibrationDB"
+scram b runtests_testBTLCalibrationSoA runtests_testBTLCalibrationConversions \
+  runtests_testBTLTrivialCalibrationSoA runtests_testBTLCalibrationDB
 ```
 
 Alternatively, run them individually. The shell wrappers need `SCRAM_TEST_PATH`
@@ -263,26 +281,30 @@ channels/TACs, zero validity in holes, reverse lookups and atomic duplicate
 rejection.
 
 `testBTLTrivialCalibrationSoA` requests both derived products through persistent
-dummy inputs over two events with a sparse map and checks all 14 configurable coefficients, raw IDs and validity
-bits at their hardware indices. The full-geometry example additionally checks
+dummy inputs over two events with a sparse map and checks all 18 configurable
+coefficients with distinct T1/T2 inputs, raw IDs and validity bits at their
+hardware indices. The full-geometry example additionally checks
 complete coverage and every coefficient for all 331776 channels using the real
 `BTLReadoutMapESProducer`.
 
 The persistence integration test `testBTLCalibrationDB` writes and reads a local
 SQLite database in both writer modes. It checks every coefficient of sparse,
-nonuniform test payloads after reconstruction as SoAs, including partial TAC
-masks, raw ID zero and the last channel. Across three runs (two events per run),
+nonuniform test payloads after reconstruction as SoAs, including independent
+T1/T2 values, partial TAC masks, raw ID zero and the last channel. Across three
+runs (two events per run),
 it checks separate TDC boundaries at runs 1/3 and QDC boundaries at runs 1/2/3,
 including the exact stored IOV counts. `testBTLCalibrationConversions` checks
-round trips, empty payloads, reordering and malformed-input rejection.
+round trips, empty payloads, reordering and malformed-input rejection for
+both T1 and T2 coefficient sets.
 
-Verified on 2026-11-13 in a temporary `CMSSW_20_1_0_pre5` area
+Verified with independent T1/T2 coefficient sets on 2026-11-13 in a temporary
+`CMSSW_20_1_0_pre5` area
 (`el9_amd64_gcc14`): package build, generated serialization, dictionary checks,
 and all four registered tests passed. The full Run4D127 geometry check also
 passed, verifying all coefficients on all 331776 channels. The standalone dummy
 writer/readback examples successfully stored both tags and requested both
-derived SoAs from SQLite. The original nightly is no longer
-available on CVMFS. Framework tests ran outside the filesystem sandbox because
+derived SoAs from SQLite. Validation used this release rather than the original
+nightly. Framework tests ran outside the filesystem sandbox because
 `cmsRun` crashes during startup inside it. GPU kernels were not executed.
 
 ## References

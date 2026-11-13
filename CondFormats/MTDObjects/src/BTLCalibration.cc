@@ -33,7 +33,9 @@ namespace {
   }
 }  // namespace
 
-void BTLTDCCalibration::validate() const { ::validate(rawIds, valid, {&t0, &a0, &a1, &a2}); }
+void BTLTDCCalibration::validate() const {
+  ::validate(rawIds, valid, {&t0_T1, &a0_T1, &a1_T1, &a2_T1, &t0_T2, &a0_T2, &a1_T2, &a2_T2});
+}
 void BTLQDCCalibration::validate() const {
   ::validate(rawIds, valid, {&p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7, &p8, &p9});
 }

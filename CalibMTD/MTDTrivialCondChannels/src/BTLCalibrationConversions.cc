@@ -15,10 +15,14 @@ namespace btl {
       view[i].rawId() = payload.rawIds[channel];
       view[i].valid() = payload.valid[channel];
       for (int tac = 0; tac < kCalibrationTACs; ++tac) {
-        view[i].t0()(tac) = payload.t0[channel * kCalibrationTACs + tac];
-        view[i].a0()(tac) = payload.a0[channel * kCalibrationTACs + tac];
-        view[i].a1()(tac) = payload.a1[channel * kCalibrationTACs + tac];
-        view[i].a2()(tac) = payload.a2[channel * kCalibrationTACs + tac];
+        view[i].t0_T1()(tac) = payload.t0_T1[channel * kCalibrationTACs + tac];
+        view[i].a0_T1()(tac) = payload.a0_T1[channel * kCalibrationTACs + tac];
+        view[i].a1_T1()(tac) = payload.a1_T1[channel * kCalibrationTACs + tac];
+        view[i].a2_T1()(tac) = payload.a2_T1[channel * kCalibrationTACs + tac];
+        view[i].t0_T2()(tac) = payload.t0_T2[channel * kCalibrationTACs + tac];
+        view[i].a0_T2()(tac) = payload.a0_T2[channel * kCalibrationTACs + tac];
+        view[i].a1_T2()(tac) = payload.a1_T2[channel * kCalibrationTACs + tac];
+        view[i].a2_T2()(tac) = payload.a2_T2[channel * kCalibrationTACs + tac];
       }
     }
     return result;
@@ -38,10 +42,14 @@ namespace btl {
       result.rawIds.push_back(id.rawId());
       result.valid.push_back(view[i].valid());
       for (int tac = 0; tac < kCalibrationTACs; ++tac) {
-        result.t0.push_back(view[i].t0()(tac));
-        result.a0.push_back(view[i].a0()(tac));
-        result.a1.push_back(view[i].a1()(tac));
-        result.a2.push_back(view[i].a2()(tac));
+        result.t0_T1.push_back(view[i].t0_T1()(tac));
+        result.a0_T1.push_back(view[i].a0_T1()(tac));
+        result.a1_T1.push_back(view[i].a1_T1()(tac));
+        result.a2_T1.push_back(view[i].a2_T1()(tac));
+        result.t0_T2.push_back(view[i].t0_T2()(tac));
+        result.a0_T2.push_back(view[i].a0_T2()(tac));
+        result.a1_T2.push_back(view[i].a1_T2()(tac));
+        result.a2_T2.push_back(view[i].a2_T2()(tac));
       }
     }
     result.validate();

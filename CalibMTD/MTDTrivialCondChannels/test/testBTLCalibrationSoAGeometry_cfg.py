@@ -15,8 +15,12 @@ process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(1))
 process.btlReadoutMap = cms.ESProducer("BTLReadoutMapESProducer")
 process.load("CalibMTD.MTDTrivialCondChannels.btlTrivialCalibrationSource_cfi")
 process.load("CalibMTD.MTDTrivialCondChannels.btlCalibrationSoA_cff")
+process.btlTrivialCalibrationSource.t0_T2 = 1.25
+process.btlTrivialCalibrationSource.a0_T2 = 2.5
+process.btlTrivialCalibrationSource.a1_T2 = 3.75
+process.btlTrivialCalibrationSource.a2_T2 = 5.0
 # Check the full map and every coefficient at its hardware dense index.
-_coefficients = ["t0", "a0", "a1", "a2"] + [f"p{i}" for i in range(10)]
+_coefficients = [f"{name}_{disc}" for disc in ("T1", "T2") for name in ("t0", "a0", "a1", "a2")] + [f"p{i}" for i in range(10)]
 process.check = cms.EDAnalyzer(
     "BTLCalibrationSoACheck",
     expected=cms.vdouble(*[getattr(process.btlTrivialCalibrationSource, name).value() for name in _coefficients]),

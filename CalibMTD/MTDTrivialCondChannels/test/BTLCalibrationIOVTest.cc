@@ -55,10 +55,14 @@ public:
       btltest::check(tdc[index].rawId() == tdcExpected.rawIds[channel]);
       btltest::check(tdc[index].valid() == tdcExpected.valid[channel]);
       for (unsigned tac = 0; tac < 8; ++tac) {
-        btltest::check(tdc[index].t0()(tac) == tdcExpected.t0[channel * 8 + tac]);
-        btltest::check(tdc[index].a0()(tac) == tdcExpected.a0[channel * 8 + tac]);
-        btltest::check(tdc[index].a1()(tac) == tdcExpected.a1[channel * 8 + tac]);
-        btltest::check(tdc[index].a2()(tac) == tdcExpected.a2[channel * 8 + tac]);
+        btltest::check(tdc[index].t0_T1()(tac) == tdcExpected.t0_T1[channel * 8 + tac]);
+        btltest::check(tdc[index].a0_T1()(tac) == tdcExpected.a0_T1[channel * 8 + tac]);
+        btltest::check(tdc[index].a1_T1()(tac) == tdcExpected.a1_T1[channel * 8 + tac]);
+        btltest::check(tdc[index].a2_T1()(tac) == tdcExpected.a2_T1[channel * 8 + tac]);
+        btltest::check(tdc[index].t0_T2()(tac) == tdcExpected.t0_T2[channel * 8 + tac]);
+        btltest::check(tdc[index].a0_T2()(tac) == tdcExpected.a0_T2[channel * 8 + tac]);
+        btltest::check(tdc[index].a1_T2()(tac) == tdcExpected.a1_T2[channel * 8 + tac]);
+        btltest::check(tdc[index].a2_T2()(tac) == tdcExpected.a2_T2[channel * 8 + tac]);
       }
     }
     const auto qdc = setup.getData(qdc_).const_view();

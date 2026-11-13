@@ -20,10 +20,14 @@ namespace btltest {
     result.valid = {0x81, 0xff, 0x04};
     for (unsigned channel = 0; channel < result.size(); ++channel)
       for (unsigned tac = 0; tac < 8; ++tac) {
-        result.t0.push_back(value(run, channel, 0, tac));
-        result.a0.push_back(value(run, channel, 1, tac));
-        result.a1.push_back(value(run, channel, 2, tac));
-        result.a2.push_back(value(run, channel, 3, tac));
+        result.t0_T1.push_back(value(run, channel, 0, tac));
+        result.a0_T1.push_back(value(run, channel, 1, tac));
+        result.a1_T1.push_back(value(run, channel, 2, tac));
+        result.a2_T1.push_back(value(run, channel, 3, tac));
+        result.t0_T2.push_back(value(run, channel, 4, tac));
+        result.a0_T2.push_back(value(run, channel, 5, tac));
+        result.a1_T2.push_back(value(run, channel, 6, tac));
+        result.a2_T2.push_back(value(run, channel, 7, tac));
       }
     return result;
   }

@@ -84,7 +84,8 @@ int main() {
     qdc.view()[i].rawId() = rawId;
     // Fill each TAC and channel with distinct values, including p9.
     for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-      tdc.view()[i].a1()(tac) = i + 0.125f * tac + 1;
+      tdc.view()[i].a1_T1()(tac) = i + 0.125f * tac + 1;
+      tdc.view()[i].a1_T2()(tac) = i + 0.125f * tac + 3;
       qdc.view()[i].p9()(tac) = i + 0.125f * tac + 2;
     }
     tdc.view()[i].valid() = 0xff;
@@ -97,9 +98,10 @@ int main() {
     require(tdcView[i].rawId() == rawId && qdcView[i].rawId() == rawId);
     require(tdcView[i].valid() == 0xff && qdcView[i].valid() == 0x01);
     for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-      require(tdcView[i].a1()(tac) == i + 0.125f * tac + 1);
+      require(tdcView[i].a1_T1()(tac) == i + 0.125f * tac + 1);
+      require(tdcView[i].a1_T2()(tac) == i + 0.125f * tac + 3);
       require(qdcView[i].p9()(tac) == i + 0.125f * tac + 2);
-      require(tdcView[i].t0()(tac) == 0.f && qdcView[i].p0()(tac) == 0.f);
+      require(tdcView[i].t0_T1()(tac) == 0.f && tdcView[i].t0_T2()(tac) == 0.f && qdcView[i].p0()(tac) == 0.f);
     }
   }
 

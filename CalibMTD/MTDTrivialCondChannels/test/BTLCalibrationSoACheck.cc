@@ -35,7 +35,7 @@ public:
         map_(esConsumes()),
         expected_(config.getParameter<std::vector<double>>("expected")),
         complete_(config.getParameter<bool>("complete")) {
-    check(expected_.size() == 14);
+    check(expected_.size() == 18);
   }
   void analyze(const edm::Event&, const edm::EventSetup& setup) override {
     const auto tdc = setup.getData(tdc_).const_view();
@@ -57,20 +57,24 @@ public:
         check(tdc[i].rawId() == id.rawId() && qdc[i].rawId() == id.rawId());
         check(tdc[i].valid() == 0xff && qdc[i].valid() == 0xff);
         for (int tac = 0; tac < btl::kCalibrationTACs; ++tac) {
-          check(tdc[i].t0()(tac) == static_cast<float>(expected_[0]));
-          check(tdc[i].a0()(tac) == static_cast<float>(expected_[1]));
-          check(tdc[i].a1()(tac) == static_cast<float>(expected_[2]));
-          check(tdc[i].a2()(tac) == static_cast<float>(expected_[3]));
-          check(qdc[i].p0()(tac) == static_cast<float>(expected_[4]));
-          check(qdc[i].p1()(tac) == static_cast<float>(expected_[5]));
-          check(qdc[i].p2()(tac) == static_cast<float>(expected_[6]));
-          check(qdc[i].p3()(tac) == static_cast<float>(expected_[7]));
-          check(qdc[i].p4()(tac) == static_cast<float>(expected_[8]));
-          check(qdc[i].p5()(tac) == static_cast<float>(expected_[9]));
-          check(qdc[i].p6()(tac) == static_cast<float>(expected_[10]));
-          check(qdc[i].p7()(tac) == static_cast<float>(expected_[11]));
-          check(qdc[i].p8()(tac) == static_cast<float>(expected_[12]));
-          check(qdc[i].p9()(tac) == static_cast<float>(expected_[13]));
+          check(tdc[i].t0_T1()(tac) == static_cast<float>(expected_[0]));
+          check(tdc[i].a0_T1()(tac) == static_cast<float>(expected_[1]));
+          check(tdc[i].a1_T1()(tac) == static_cast<float>(expected_[2]));
+          check(tdc[i].a2_T1()(tac) == static_cast<float>(expected_[3]));
+          check(tdc[i].t0_T2()(tac) == static_cast<float>(expected_[4]));
+          check(tdc[i].a0_T2()(tac) == static_cast<float>(expected_[5]));
+          check(tdc[i].a1_T2()(tac) == static_cast<float>(expected_[6]));
+          check(tdc[i].a2_T2()(tac) == static_cast<float>(expected_[7]));
+          check(qdc[i].p0()(tac) == static_cast<float>(expected_[8]));
+          check(qdc[i].p1()(tac) == static_cast<float>(expected_[9]));
+          check(qdc[i].p2()(tac) == static_cast<float>(expected_[10]));
+          check(qdc[i].p3()(tac) == static_cast<float>(expected_[11]));
+          check(qdc[i].p4()(tac) == static_cast<float>(expected_[12]));
+          check(qdc[i].p5()(tac) == static_cast<float>(expected_[13]));
+          check(qdc[i].p6()(tac) == static_cast<float>(expected_[14]));
+          check(qdc[i].p7()(tac) == static_cast<float>(expected_[15]));
+          check(qdc[i].p8()(tac) == static_cast<float>(expected_[16]));
+          check(qdc[i].p9()(tac) == static_cast<float>(expected_[17]));
         }
       }
     }
