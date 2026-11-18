@@ -6,6 +6,17 @@
   <use name="FWCore/Utilities"/>
   <flags EDM_PLUGIN="1"/>
 </library>
+<library file="alpaka/*.cc" name="BTLCalibrationSoAPortableTestPlugins">
+  <use name="alpaka"/>
+  <use name="CondFormats/DataRecord"/>
+  <use name="CondFormats/MTDObjects"/>
+  <use name="DataFormats/Portable"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="FWCore/Utilities"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <flags ALPAKA_BACKENDS="1"/>
+  <flags EDM_PLUGIN="1"/>
+</library>
 <test name="testBTLTrivialCalibrationSoA" command="testBTLTrivialCalibrationSoA.sh"/>
 <bin file="testBTLCalibrationConversions.cc" name="testBTLCalibrationConversions">
   <use name="CalibMTD/MTDTrivialCondChannels"/>

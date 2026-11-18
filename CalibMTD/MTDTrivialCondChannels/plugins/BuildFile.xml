@@ -8,3 +8,15 @@
 <use name="HeterogeneousCore/AlpakaInterface"/>
 <flags EDM_PLUGIN="1"/>
 </library>
+
+<library file="alpaka/*.cc" name="MTDTrivialConditionPluginsPortable">
+  <use name="alpaka"/>
+  <use name="CalibMTD/MTDTrivialCondChannels"/>
+  <use name="CondFormats/DataRecord"/>
+  <use name="CondFormats/MTDObjects"/>
+  <use name="DataFormats/Portable"/>
+  <use name="FWCore/ParameterSet"/>
+  <use name="HeterogeneousCore/AlpakaCore"/>
+  <flags ALPAKA_BACKENDS="1"/>
+  <flags EDM_PLUGIN="1"/>
+</library>

@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 process = cms.Process("TEST")
+process.load("Configuration.StandardSequences.Accelerators_cff")
 process.source = cms.Source("EmptySource")
 process.maxEvents = cms.untracked.PSet(input=cms.untracked.int32(2))
 # A sparse map tests channel ordering without requiring detector geometry.
@@ -37,4 +38,5 @@ process.btlTrivialCalibrationSource.p7 = 16.0
 process.btlTrivialCalibrationSource.p8 = 17.0
 process.btlTrivialCalibrationSource.p9 = 18.0
 process.check = cms.EDAnalyzer("BTLCalibrationSoACheck", expected=cms.vdouble(*range(1, 19)), complete=cms.bool(False))
-process.p = cms.Path(process.check)
+process.checkDevice = cms.EDProducer("BTLCalibrationDeviceCheck@alpaka")
+process.p = cms.Path(process.check + process.checkDevice)
